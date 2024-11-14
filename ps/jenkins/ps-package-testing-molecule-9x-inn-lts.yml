@@ -15,4 +15,42 @@
                     - 'add-ps-90-pt-support'
                 wipe-workspace: true
         lightweight-checkout: true
-        script-path: ps/jenkins/ps-package-testing-molecule-9.0.groovy
+        script-path: ps/jenkins/ps-package-testing-molecule-9x-inn-lts.groovy
+    parameters:
+        - choice:
+            name: product_to_test
+            choices:
+                - "ps_80"
+                - "ps_84"
+                - "ps-9x-innovation-lts"
+                - "ps_lts_innovation"
+                - "client_test"
+            description: "Product for which the packages will be tested"
+        - choice:
+            name: install_repo
+            choices:
+                - "testing"
+                - "main"
+                - "experimental"
+            description: "Repo to use in install test"
+        - choice:
+            name: action_to_test
+            choices:
+                - "all"
+                - "install"
+                - "upgrade"
+                - "maj-upgrade-to"
+                - "kmip"
+            description: "Action to test on the product"
+        - choice:
+            name: check_warnings
+            choices:
+                - "yes"
+                - "no"
+            description: "check warning in client_test"
+        - choice:
+            name: install_mysql_shell
+            choices:
+                - "yes"
+                - "no"
+            description: "install and check mysql-shell for innovation-lts"
