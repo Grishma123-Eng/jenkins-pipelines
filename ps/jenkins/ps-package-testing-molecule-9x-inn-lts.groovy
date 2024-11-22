@@ -19,7 +19,7 @@
     }
     parameters {
         choice(
-            choices: ['ps_80', 'ps_84','ps_9x_innovation_lts' ,'ps_lts_innovation','client_test'],
+            choices: ['ps_80', 'ps_84' ,'ps_lts_innovation','client_test'],
             description: 'Choose the product version to test: PS9X_innovation_lts OR ps_lts_innovatoin',
             name: 'product_to_test'
         )

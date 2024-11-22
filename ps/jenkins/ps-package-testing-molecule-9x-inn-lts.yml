@@ -22,7 +22,7 @@
             choices:
                 - "ps_80"
                 - "ps_84"
-                - "ps_9x_innovation_lts"
+                #- "ps_9x_innovation_lts"
                 - "ps_lts_innovation"
                 - "client_test"
             description: "Product for which the packages will be tested"
