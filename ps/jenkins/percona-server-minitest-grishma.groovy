@@ -42,6 +42,7 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
             sed -i 's|dbg-package=percona-server-dbg|dbg-package=percona-server-pro-dbg|g' ps_builder.sh
         fi
         grep "percona-server-server" ps_builder.sh
+        echo "ps_builder ::::"
         export build_dir=\$(pwd -P)
         if [ "$DOCKER_OS" = "none" ]; then
             set -o xtrace
@@ -290,6 +291,7 @@ parameters {
                // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
 
               /*  if("${PS8_RELEASE_VERSION}"){
+
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS8_RELEASE_VERSION}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
