@@ -41,6 +41,7 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
             sed -i 's|percona-server-server/usr|percona-server-server-pro/usr|g' ps_builder.sh
             sed -i 's|dbg-package=percona-server-dbg|dbg-package=percona-server-pro-dbg|g' ps_builder.sh
         fi
+        cat ps_builder.sh
         grep "percona-server-server" ps_builder.sh
         echo "ps_builder ::::"
         export build_dir=\$(pwd -P)
