@@ -271,6 +271,7 @@ parameters {
     post {
         success {
             script {
+                echo "Hello"
                /* if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
