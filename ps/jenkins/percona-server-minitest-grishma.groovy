@@ -261,12 +261,13 @@ parameters {
                    cat awsUploadPath
                 '''
                 script {
-                    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                    echo "Helloooo"
+                 //   AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-                pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
+              //  pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
+                //uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
     }
