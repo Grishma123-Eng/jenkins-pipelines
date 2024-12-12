@@ -290,7 +290,7 @@ parameters {
                 
                 PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
                 echo "PS_RELEASE : ${PS_RELEASE}"
-                PS_VERSION_KEY= PS_RELEASE.execute("awk -F'.' '{print \$1 \".\" \$2}'").text.trim()
+                PS_VERSION_KEY= PS_RELEASE..execute(["awk", "-F.", "{print \$1 \".\" \$2}"]).text.trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
 
                 def KEY_VER
