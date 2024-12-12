@@ -290,9 +290,33 @@ parameters {
                 
                 PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
                 echo "PS_RELEASE : ${PS_RELEASE}"
-               // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
+                PS_VERSION_KEY= PS_RELEASE.execute("awk -F'.' '{print \$1 \".\" \$2}'").text.trim()
+                echo "Version is for : ${PS_VERSION_KEY}"
 
-              /*  if("${PS8_RELEASE_VERSION}"){
+                def KEY_VER
+
+                if (PS_VERSION_KEY == '8.0')
+                {
+                    KEY_VER= PS80_VER
+                    echo "Fetching version for: PS 80"
+                }
+                else if (PS_VERSION_KEY == '8.4')
+                {
+                    KEY_VER= PS84_VER
+                    echo "Fetching version for: PS 84"
+                }
+                else if (PS_VERSION_KEY == '9.0')
+                {
+                    KEY_VER= PS84_VERPS_INN_LTS_VER
+                    echo "Fetching version for: PS INNOVATION LTS"
+                }
+                else{
+                    echo "invalid version"
+                }
+                
+               // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
+                
+              /* if("${PS8_RELEASE_VERSION}"){
 
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS8_RELEASE_VERSION}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
@@ -306,7 +330,7 @@ parameters {
                         git checkout testing-branch 
                         echo "${PS8_RELEASE_VERSION} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS8_RELEASE_VERSION}"
-                        if [[ "\$RELEASE_VER_VAL" =~ ^9.[0-9]{1}\$ ]]; then
+                        if [[ "\$RELEASE_VER_VAL" =~ ^9.[0-9]{1}\$ || "\$RELEASE_VER_VAL" =~ ^8.[0-9]{1}$ ]]; then
                             echo "\$RELEASE_VER_VAL is a valid version"
                             OLD_REV=\$(cat VERSIONS | grep PS_INN_LTS_REV | cut -d '=' -f2- )
                             OLD_VER=\$(cat VERSIONS | grep PS_INN_LTS_VER | cut -d '=' -f2- )
@@ -352,8 +376,8 @@ parameters {
                 else{
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
                    // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
-                } */
-            } 
+                } 
+            } */
             deleteDir() 
         }
         failure {
