@@ -292,10 +292,10 @@ parameters {
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
-                KEY_VER = "ps${PS_VERSION_KEY.replace('.', '')}_ver"
+                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}_VER"
                 echo "Value is : ${KEY_VER}"
 
-                def KEY_VER
+            /*    def KEY_VER
 
                 if (PS_VERSION_KEY == '8.0')
                 {
@@ -316,7 +316,7 @@ parameters {
                     echo "invalid version"
                 }
                 
-                echo "version is for : ${KEY_VER}"
+                echo "version is for : ${KEY_VER}" */
 
                // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
                 
