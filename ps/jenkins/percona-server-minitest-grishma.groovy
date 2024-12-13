@@ -190,8 +190,9 @@ def package_tests_ps80(def nodes) {
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
 def PS8_RELEASE_VERSION
-def product_to_test = 'innovation-lts'
+def product_to_test = 'ps80'
 def install_repo = 'testing'
+def node_to_test = 'min-jammy-x64'
 def action_to_test = 'install'
 def check_warnings = 'yes'
 def install_mysql_shell = 'no'
@@ -333,13 +334,13 @@ parameters {
                         fi
                     """
                     }
-                 /* echo "Start Minitests for PS"                
-                    package_tests_ps80(minitestNodes)
+                echo "Start Minitests for PS"                
+                    KEY_VER(minitestNodes)
                     if("${mini_test_error}" == "True"){
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
                     }else{
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                        build job: 'package-testing-ps-innovation-lts', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'node_to_test', value: "all"),string(name: 'action_to_test', value: "all"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                        build job: 'package-testing-ps80-build', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'node_to_test', value: "min-jammy-x64"),string(name: 'action_to_test', value: "all"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                                                                                                                             
                         echo "Trigger PMM_PS Github Actions Workflow"
                         
@@ -353,7 +354,7 @@ parameters {
                             """
                         } 
 
-                    } */
+                    } 
                 }
                 else{
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
