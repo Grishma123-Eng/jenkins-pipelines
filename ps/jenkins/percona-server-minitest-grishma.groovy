@@ -313,9 +313,9 @@ parameters {
                         if [[ "\$RELEASE_VER_VAL" =~ ^8.[0-9]{1}\$ ]]; then
                             echo "\$RELEASE_VER_VAL is a valid version"
                             OLD_REV=\$(cat VERSIONS | grep ${KEY_VER}_REV | cut -d '=' -f2- )
-                            echo "OLD_REV is : ${OLD_REV}"
+                            echo "OLD_REV is : \${OLD_REV}"
                             OLD_VER=\$(cat VERSIONS | grep ${KEY_VER}_VER | cut -d '=' -f2- )
-                            echo "OLD_VER is : ${OLD_VER}"
+                            echo "OLD_VER is : \${OLD_VER}"
                             sed -i s/PS_INN_LTS_REV=\$OLD_REV/${KEY_VER}_REV='"'${REVISION}'"'/g VERSIONS
                             sed -i s/PS_INN_LTS_VER=\$OLD_VER/${KEY_VER}_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
