@@ -316,12 +316,6 @@ parameters {
                             echo "OLD_REV is : \${OLD_REV}"
                             OLD_VER=\$(cat VERSIONS | grep ${KEY_VER}_VER | cut -d '=' -f2- )
                             echo "OLD_VER is : \${OLD_VER}"
-                            echo "OLD_REV=\$OLD_REV" > old_rev.txt
-                            echo "OLD_VER=\$OLD_VER" > old_ver.txt
-                            def OLD_REV = readFile('old_rev.txt').trim()
-                            def OLD_VER = readFile('old_ver.txt').trim()
-                            echo "Captured OLD_REV: ${OLD_REV}"
-                            echo "Captured OLD_VER: ${OLD_VER}"
                             sed -i s/PS_INN_LTS_REV=\$OLD_REV/${KEY_VER}_REV='"'${REVISION}'"'/g VERSIONS
                             sed -i s/PS_INN_LTS_VER=\$OLD_VER/${KEY_VER}_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
