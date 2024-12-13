@@ -335,7 +335,7 @@ parameters {
                     """
                     }
                 echo "Start Minitests for PS"                
-                    KEY_VER(minitestNodes)
+                    package_tests_ps80(minitestNodes)
                     if("${mini_test_error}" == "True"){
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
                     }else{
