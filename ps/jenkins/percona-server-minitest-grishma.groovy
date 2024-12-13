@@ -292,37 +292,13 @@ parameters {
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
-                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}_VER"
+                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
                 echo "Value is : ${KEY_VER}"
-
-            /*    def KEY_VER
-
-                if (PS_VERSION_KEY == '8.0')
-                {
-                    KEY_VER= PS80_VER
-                    echo "Fetching version for: PS 80"
-                }
-                else if (PS_VERSION_KEY == '8.4')
-                {
-                    KEY_VER= PS84_VER
-                    echo "Fetching version for: PS 84"
-                }
-                else if (PS_VERSION_KEY == '9.0')
-                {
-                    KEY_VER= PS84_VERPS_INN_LTS_VER
-                    echo "Fetching version for: PS INNOVATION LTS"
-                }
-                else{
-                    echo "invalid version"
-                }
-                
-                echo "version is for : ${KEY_VER}" */
-
                // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
                 
-              /* if("${PS8_RELEASE_VERSION}"){
+               if("${KEY_VER}"){
 
-                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS8_RELEASE_VERSION}"
+                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${KEY_VER}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
@@ -332,17 +308,17 @@ parameters {
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
                         git checkout testing-branch 
-                        echo "${PS8_RELEASE_VERSION} is the VALUE!!@!"
-                        export RELEASE_VER_VAL="${PS8_RELEASE_VERSION}"
-                        if [[ "\$RELEASE_VER_VAL" =~ ^9.[0-9]{1}\$ || "\$RELEASE_VER_VAL" =~ ^8.[0-9]{1}$ ]]; then
+                        echo "${KEY_VER} is the VALUE!!@!"
+                        export RELEASE_VER_VAL="${KEY_VER}"
+                        if [[ "\$RELEASE_VER_VAL" =~ ^8.[0-9]{1}\$ ]]; then
                             echo "\$RELEASE_VER_VAL is a valid version"
-                            OLD_REV=\$(cat VERSIONS | grep PS_INN_LTS_REV | cut -d '=' -f2- )
-                            OLD_VER=\$(cat VERSIONS | grep PS_INN_LTS_VER | cut -d '=' -f2- )
-                            sed -i s/PS_INN_LTS_REV=\$OLD_REV/PS_INN_LTS_REV='"'${REVISION}'"'/g VERSIONS
-                            sed -i s/PS_INN_LTS_VER=\$OLD_VER/PS_INN_LTS_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            OLD_REV=\$(cat VERSIONS | grep ${KEY_VER}_REV | cut -d '=' -f2- )
+                            OLD_VER=\$(cat VERSIONS | grep ${KEY_VER}_VER | cut -d '=' -f2- )
+                            sed -i s/PS_INN_LTS_REV=\$OLD_REV/${KEY_VER}_REV='"'${REVISION}'"'/g VERSIONS
+                            sed -i s/PS_INN_LTS_VER=\$OLD_VER/${KEY_VER}_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
                         else
-                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${PS8_RELEASE_VERSION}"
+                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${KEY_VER}"
                         fi
                         git diff
                         if [[ -z \$(git diff) ]]; then
@@ -350,12 +326,12 @@ parameters {
                         else
                             echo "There are changes"
                             git add -A
-                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${PS8_RELEASE_VERSION} package testing VERSIONS file."
+                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${KEY_VER} package testing VERSIONS file."
                             git push
                         fi
                     """
                     }
-                    echo "Start Minitests for PS"                
+                 /* echo "Start Minitests for PS"                
                     package_tests_ps80(minitestNodes)
                     if("${mini_test_error}" == "True"){
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
@@ -373,15 +349,15 @@ parameters {
                                     "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
                                     -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                             """
-                        }
+                        } 
 
-                    }
+                    } */
                 }
                 else{
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
                    // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
                 } 
-            } */
+            } 
             deleteDir() 
         }
         failure {
@@ -398,5 +374,4 @@ parameters {
             deleteDir()
         }
     }
-}
 }
