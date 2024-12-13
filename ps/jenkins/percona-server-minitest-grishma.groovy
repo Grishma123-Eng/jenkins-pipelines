@@ -316,8 +316,8 @@ parameters {
                             echo "OLD_REV is : \${OLD_REV}"
                             OLD_VER=\$(cat VERSIONS | grep ${KEY_VER}_VER | cut -d '=' -f2- )
                             echo "OLD_VER is : \${OLD_VER}"
-                            sed -i s/PS_INN_LTS_REV=\$OLD_REV/${KEY_VER}_REV='"'${REVISION}'"'/g VERSIONS
-                            sed -i s/PS_INN_LTS_VER=\$OLD_VER/${KEY_VER}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            sed -i s/${KEY_VER}_REV=\$OLD_REV/${KEY_VER}_REV='"'${REVISION}'"'/g VERSIONS
+                            sed -i s/${KEY_VER}_VER=\$OLD_VER/${KEY_VER}_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
                         else
                             echo "INVALID PS8_RELEASE_VERSION VALUE: ${KEY_VER}"
