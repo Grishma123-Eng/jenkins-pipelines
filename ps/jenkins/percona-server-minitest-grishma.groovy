@@ -286,11 +286,15 @@ parameters {
         stage('Preparation') {
             steps {
                 script {
-                    runPlaybook("nodeName")
-                    echo "Revision: ${env.REVISION}"
-                    echo "PS_RELEASE: ${env.PS_RELEASE}"
-                    echo "PS_VERSION_KEY: ${env.PS_VERSION_KEY}"
-                    echo "KEY_VER: ${env.KEY_VER}"
+                    def playbookValues = runPlaybook("nodeName")
+                    if (playbookValues != null) {
+                        env.REVISION = playbookValues.revision
+                        env.PS_RELEASE = playbookValues.ps_release
+                        env.PS_VERSION_KEY = playbookValues.ps_version_key
+                        env.KEY_VER = playbookValues.key_ver
+                    } else {
+                        echo "Error: runPlaybook did not return valid values."
+                    }
                 }
             }
         }
