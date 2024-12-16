@@ -153,9 +153,9 @@ def runPlaybook(def nodeName) {
         def playbook //= "ps_80.yml"
         def playbook_path //= "package-testing/playbooks/${playbook}"
 
-        if (env.KEY_VER == 'ps80') {
+        if (env.KEY_VER == 'PS80') {
             playbook = "ps_80.yml"
-        } else if (env.KEY_VER == 'ps84') {
+        } else if (env.KEY_VER == 'PS84') {
             playbook = "ps_84.yml"
         } else {
             playbook = "ps_80.yml"
@@ -350,7 +350,7 @@ parameters {
                 echo "Version is for : ${PS_VERSION_KEY}"
                 KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
                 echo "Value is : ${KEY_VER}"
-                
+
             // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
                 if("${KEY_VER}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${KEY_VER}"
