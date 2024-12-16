@@ -235,12 +235,12 @@ pipeline {
     agent {
         label 'docker'
     }
-    environment {
+   /* environment {
         REVISION = ""
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
         KEY_VER = ""
-    }
+    }*/
 
 parameters {
         string(defaultValue: 'https://github.com/percona/percona-server.git', description: 'github repository for build', name: 'GIT_REPO')
@@ -283,7 +283,7 @@ parameters {
         timestamps ()
     }
     stages {
-        stage('Preparation') {
+        /*stage('Preparation') {
             steps {
                 script {
                     def playbookValues = runPlaybook("nodeName")
@@ -297,7 +297,7 @@ parameters {
                     }
                 }
             }
-        }
+        }*/
         stage('Create PS source tarball') {
             agent {
                label 'min-focal-x64'
@@ -339,15 +339,21 @@ parameters {
             } 
            // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             //unstash 'properties'
-            script {
+             unstash 'properties' 
+             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-                echo "Revision: ${env.REVISION}"
-                echo "PS_RELEASE: ${env.PS_RELEASE}"
-                echo "PS_VERSION_KEY: ${env.PS_VERSION_KEY}"
-                echo "KEY_VER: ${env.KEY_VER}"
-               // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
+            REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+            sh "cat test/percona-server-8.0.properties"
+            PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
+            echo "PS_RELEASE : ${PS_RELEASE}"
+            PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
+            echo "Version is for : ${PS_VERSION_KEY}"
+            KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
+            echo "Value is : ${KEY_VER}"
+            // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
+            }
 
-               if("${env.KEY_VER}"){
+               if("${KEY_VER}"){
 
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${KEY_VER}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
