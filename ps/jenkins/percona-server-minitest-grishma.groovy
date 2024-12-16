@@ -288,10 +288,10 @@ parameters {
                 script {
                     def playbookValues = runPlaybook("nodeName")
                     if (playbookValues != null) {
-                        env.REVISION = playbookValues.revision
-                        env.PS_RELEASE = playbookValues.ps_release
-                        env.PS_VERSION_KEY = playbookValues.ps_version_key
-                        env.KEY_VER = playbookValues.key_ver
+                        env.REVISION = playbookValues.REVISION
+                        env.PS_RELEASE = playbookValues.PS_RELEASE
+                        env.PS_VERSION_KEY = playbookValues.PS_VERSION_KEY
+                        env.KEY_VER = playbookValues.KEY_VER
                     } else {
                         echo "Error: runPlaybook did not return valid values."
                     }
