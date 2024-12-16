@@ -389,7 +389,6 @@ parameters {
                             git push
                         fi
                     """
-                    }
                 echo "Start Minitests for PS"                
                     package_tests_ps80(minitestNodes)
                     if("${mini_test_error}" == "True"){
@@ -434,3 +433,4 @@ parameters {
         }
     }
 }
+
