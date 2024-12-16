@@ -324,7 +324,7 @@ parameters {
                 } */
             } 
            // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
-            unstash 'properties'
+            //unstash 'properties'
             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
                 echo "Revision: ${env.REVISION}"
