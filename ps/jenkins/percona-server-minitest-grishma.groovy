@@ -136,7 +136,7 @@ def installDependencies(def nodeName) {
 def runPlaybook(def nodeName) {
 
     try {
-        def playbook = "ps_lts_innovation.yml"
+        def playbook = "ps_80.yml"
         def playbook_path = "package-testing/playbooks/${playbook}"
 
         sh '''
