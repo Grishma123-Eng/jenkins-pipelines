@@ -339,22 +339,20 @@ parameters {
             } 
            // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             //unstash 'properties'
-             unstash 'properties' 
-             script {
+            unstash 'properties' 
+            script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-            REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
-            sh "cat test/percona-server-8.0.properties"
-            PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
-            echo "PS_RELEASE : ${PS_RELEASE}"
-            PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
-            echo "Version is for : ${PS_VERSION_KEY}"
-            KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
-            echo "Value is : ${KEY_VER}"
+                REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+                sh "cat test/percona-server-8.0.properties"
+                PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
+                echo "PS_RELEASE : ${PS_RELEASE}"
+                PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
+                echo "Version is for : ${PS_VERSION_KEY}"
+                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
+                echo "Value is : ${KEY_VER}"
+                
             // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
-            }
-
-               if("${KEY_VER}"){
-
+                if("${KEY_VER}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${KEY_VER}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
@@ -389,7 +387,8 @@ parameters {
                             git push
                         fi
                     """
-                echo "Start Minitests for PS"                
+                    }
+                    echo "Start Minitests for PS"                
                     package_tests_ps80(minitestNodes)
                     if("${mini_test_error}" == "True"){
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
