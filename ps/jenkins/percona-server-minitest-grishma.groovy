@@ -155,11 +155,13 @@ def runPlaybook(def nodeName) {
 
         if (env.KEY_VER == 'PS80') {
             playbook = "ps_80.yml"
+            client_to_test = "ps80"
         } else if (env.KEY_VER == 'PS84') {
             playbook = "ps_84.yml"
+            client_to_test = "ps84"
         } else {
-            playbook = "ps_80.yml"
-            echo "Unknown branch, defaulting to ps80 playbook."
+           // playbook = "ps_80.yml"
+            echo "Unknown branch"
         }
 
         playbook_path = "package-testing/playbooks/${playbook}"
@@ -170,10 +172,10 @@ def runPlaybook(def nodeName) {
         '''
         sh """
             set -xe
-            export install_repo="\${install_repo}"
-            export client_to_test="ps80"
-            export check_warning="\${check_warnings}"
-            export install_mysql_shell="\${install_mysql_shell}"
+            export install_repo="testing"
+            export client_to_test="\${client_to_test}"
+            export check_warning="yes"
+            export install_mysql_shell="no"
             ansible-playbook \
             --connection=local \
             --inventory 127.0.0.1, \
