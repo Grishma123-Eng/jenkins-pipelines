@@ -152,6 +152,7 @@ def runPlaybook(def nodeName) {
 
         def playbook //= "ps_80.yml"
         def playbook_path //= "package-testing/playbooks/${playbook}"
+        def client_to_test
 
         if (env.KEY_VER == 'PS80') {
             playbook = "ps_80.yml"
@@ -173,7 +174,7 @@ def runPlaybook(def nodeName) {
         sh """
             set -xe
             export install_repo="testing"
-            export client_to_test="\${env.client_to_test}"
+            export client_to_test="${env.client_to_test}"
             export check_warning="yes"
             export install_mysql_shell="no"
             ansible-playbook \
