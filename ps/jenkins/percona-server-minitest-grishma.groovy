@@ -155,10 +155,10 @@ def runPlaybook(def nodeName) {
 
         if (env.KEY_VER == 'PS80') {
             playbook = "ps_80.yml"
-            client_to_test = "ps80"
+            env.client_to_test = "ps80"
         } else if (env.KEY_VER == 'PS84') {
             playbook = "ps_84.yml"
-            client_to_test = "ps84"
+            env.client_to_test = "ps84"
         } else {
            // playbook = "ps_80.yml"
             echo "Unknown branch"
@@ -173,7 +173,7 @@ def runPlaybook(def nodeName) {
         sh """
             set -xe
             export install_repo="testing"
-            export client_to_test="\${client_to_test}"
+            export client_to_test="\${env.client_to_test}"
             export check_warning="yes"
             export install_mysql_shell="no"
             ansible-playbook \
@@ -190,10 +190,10 @@ def runPlaybook(def nodeName) {
 
 def minitestNodes = [  "min-bullseye-x64",
                        "min-bookworm-x64",
-                       "min-centos-7-x64",
+                       //"min-centos-7-x64",
                        "min-ol-8-x64",
-                       "min-focal-x64",
-                       "min-amazon-2-x64",
+                      // "min-focal-x64",
+                      // "min-amazon-2-x64",
                        "min-jammy-x64",
                        "min-noble-x64",
                        "min-ol-9-x64"     ]
