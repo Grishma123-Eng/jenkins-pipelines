@@ -270,7 +270,7 @@ pipeline {
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
         KEY_VER = ""
-
+        product_to_test = ""
     }
 
 parameters {
