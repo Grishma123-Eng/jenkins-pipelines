@@ -204,6 +204,17 @@ def runPlaybook(def nodeName) {
     }
 }
 
+def Fetch_Product_to_test() {
+    def env.product_to_test
+    echo "Using KEY_VER in another function: ${env.KEY_VER}"
+    if (env.KEY_VER == 'PS80' || env.KEY_VER == 'PS84') {
+        env.product_to_test = "${env.KEY_VER}"
+        echo "Valid PS version: ${env.KEY_VER}"
+    } else {
+        env.product_to_test = "client_test"
+        echo "PS version is client_test"
+    }
+}
 
 def minitestNodes = [  "min-bullseye-x64",
                        "min-bookworm-x64",
@@ -234,14 +245,14 @@ def package_tests_ps80(def nodes) {
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-def product_to_test
+/*def product_to_test
 if (env.KEY_VER == 'PS80' || env.KEY_VER == 'PS84') {
 product_to_test = "${env.KEY_VER}"
 }
 else {
 product_to_test = 'client_test'  // Default value or handle other conditions
 }
-echo "Product to test: ${product_to_test}"
+echo "Product to test: ${product_to_test}" */
 //def PS8_RELEASE_VERSION
 def install_repo = 'testing'
 //def node_to_test = 'min-jammy-x64'
@@ -259,6 +270,7 @@ pipeline {
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
         KEY_VER = ""
+
     }
 
 parameters {
@@ -328,6 +340,13 @@ parameters {
             steps {
                 script {
                     runPlaybook()
+                }
+            }
+        }
+        stage('Fetch_product_to_test') {
+            steps {
+                script {
+                    Fetch_Product_to_test()
                 }
             }
         }
@@ -427,7 +446,7 @@ parameters {
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
                     }else{
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                        build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                        build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                                                                                                                             
                         echo "Trigger PMM_PS Github Actions Workflow"
                         
