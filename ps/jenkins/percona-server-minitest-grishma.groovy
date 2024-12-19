@@ -287,7 +287,10 @@ parameters {
     stages {
         stage('Preparation') {
             steps {
+                unstash 'properties'
                 script {
+                    env.REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+                    sh "cat test/percona-server-8.0.properties"
                     env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
                     echo "PS_RELEASE: ${env.PS_RELEASE}"
                     env.PS_VERSION_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
@@ -371,6 +374,9 @@ parameters {
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
                 KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}" */
+                echo "Revision is: ${REVISION}"
+                echo "PS_RELEASE is: ${PS_RELEASE}"
+                echo "PS_VERSION_KEY is: ${PS_VERSION_KEY}"
                 echo "Value is : ${KEY_VER}"
                 
                 if (env.product_to_test == 'PS80') {
