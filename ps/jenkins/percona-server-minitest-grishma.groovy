@@ -205,7 +205,7 @@ def runPlaybook(def nodeName) {
 }
 
 def Fetch_Product_to_test() {
-    def env.product_to_test
+    script{
     echo "Using KEY_VER in another function: ${env.KEY_VER}"
     if (env.KEY_VER == 'PS80' || env.KEY_VER == 'PS84') {
         env.product_to_test = "${env.KEY_VER}"
@@ -213,6 +213,7 @@ def Fetch_Product_to_test() {
     } else {
         env.product_to_test = "client_test"
         echo "PS version is client_test"
+    }
     }
 }
 
