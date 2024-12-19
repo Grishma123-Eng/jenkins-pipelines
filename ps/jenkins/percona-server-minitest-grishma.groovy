@@ -133,10 +133,8 @@ def installDependencies(def nodeName) {
 
 }
 
-def runPlaybook(def nodeName) {
-
-    try {
-        unstash 'properties' 
+def setKeyVer() {
+    unstash 'properties' 
         script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
             env.REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
@@ -149,7 +147,24 @@ def runPlaybook(def nodeName) {
             echo "Value is : ${env.KEY_VER}"
             // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
         }
+}
 
+def runPlaybook(def nodeName) {
+
+    try {
+        /*unstash 'properties' 
+        script {
+               // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
+            env.REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+            sh "cat test/percona-server-8.0.properties"
+            env.PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
+            echo "PS_RELEASE : ${env.PS_RELEASE}"
+            env.PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
+            echo "Version is for : ${env.PS_VERSION_KEY}"
+            env.KEY_VER = "PS${env.PS_VERSION_KEY.replace('.', '')}"
+            echo "Value is : ${env.KEY_VER}"
+        } */
+        echo "Using KEY_VER in another function: ${env.KEY_VER}"
         def playbook //= "ps_80.yml"
         def playbook_path //= "package-testing/playbooks/${playbook}"
         def client_to_test
@@ -188,6 +203,7 @@ def runPlaybook(def nodeName) {
         mini_test_error="True"
     }
 }
+
 
 def minitestNodes = [  "min-bullseye-x64",
                        "min-bookworm-x64",
@@ -238,12 +254,12 @@ pipeline {
     agent {
         label 'docker'
     }
-   /* environment {
+    environment {
         REVISION = ""
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
         KEY_VER = ""
-    }*/
+    }
 
 parameters {
         string(defaultValue: 'https://github.com/percona/percona-server.git', description: 'github repository for build', name: 'GIT_REPO')
@@ -301,6 +317,20 @@ parameters {
                 }
             }
         }*/
+        stage('Prepare') {
+            steps {
+                script {
+                    setKeyVer()
+                }
+            }
+        }
+        stage('USE Variable') {
+            steps {
+                script {
+                    runPlaybook()
+                }
+            }
+        }
         stage('Create PS source tarball') {
             agent {
                label 'min-focal-x64'
