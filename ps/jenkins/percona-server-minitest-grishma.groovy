@@ -235,13 +235,14 @@ pipeline {
     agent {
         label 'docker'
     }
-    environment {
+    /* environment {
        /* REVISION = ""
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
-        KEY_VER = "" */
+        KEY_VER = "" 
         product_to_test = ""
-    }
+    } */
+    
 
 parameters {
         string(defaultValue: 'https://github.com/percona/percona-server.git', description: 'github repository for build', name: 'GIT_REPO')
@@ -293,27 +294,29 @@ parameters {
                     echo "PS_VERSION_KEY: ${env.PS_VERSION_KEY}"
                     env.KEY_VER = "PS${env.PS_VERSION_KEY.replace('.', '')}"
                     echo "KEY_VER: ${env.KEY_VER}"
-
+                    def product_to_test
                     if (env.KEY_VER == 'PS80' ) {
-                        env.product_to_test = "PS80"
+                        product_to_test = "PS80"
                         echo "product to test is ps80"
                     } 
                     else if (env.KEY_VER == 'PS84' ) {
-                        env.product_to_test = "PS84"
+                        product_to_test = "PS84"
                         echo "product to test is ps84"
                     } 
                     else {
-                        env.product_to_test = 'client_test'
+                        product_to_test = 'client_test'
                         echo "product to test is client_test"
                     }
-                    echo "Product to test: ${env.product_to_test}"
+
+                    env.product_to_test = product_to_test
+                    echo "Product to test is: ${env.product_to_test}"
                     }
                 }
             }
         stage('Run Playbook') {
             steps {
                 script {
-                    echo "Product to test in playbook: ${env.product_to_test}"
+                    echo "Product to test in playbook: ${product_to_test}"
                 }
             }
         }
