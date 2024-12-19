@@ -364,13 +364,13 @@ parameters {
             unstash 'properties' 
             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-                REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+               /* REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
                 PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
-                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}"
+                KEY_VER = "PS${PS_VERSION_KEY.replace('.', '')}" */
                 echo "Value is : ${KEY_VER}"
                 
                 if (env.product_to_test == 'PS80') {
