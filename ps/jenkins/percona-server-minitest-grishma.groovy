@@ -215,7 +215,7 @@ def package_tests_ps80(def nodes) {
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-def product_to_test
+/*def product_to_test
 if (env.KEY_VER == 'PS80' || env.KEY_VER == 'PS84') {
 product_to_test = "${env.KEY_VER}"
 }
@@ -369,7 +369,7 @@ parameters {
                 } else {
                     echo "Running client test"
                 }
-                
+
             // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
                 if("${KEY_VER}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${KEY_VER}"
