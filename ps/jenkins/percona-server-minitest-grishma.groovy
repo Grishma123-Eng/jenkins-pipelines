@@ -296,11 +296,11 @@ parameters {
                     echo "KEY_VER: ${env.KEY_VER}"
                     def product_to_test
                     if (env.KEY_VER == 'PS80' ) {
-                        product_to_test = "PS80"
+                        product_to_test = "ps_80"
                         echo "product to test is ps80"
                     } 
                     else if (env.KEY_VER == 'PS84' ) {
-                        product_to_test = "PS84"
+                        product_to_test = "ps_84"
                         echo "product to test is ps84"
                     } 
                     else {
