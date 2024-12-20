@@ -425,7 +425,13 @@ parameters {
                     package_tests_ps80(minitestNodes)
                     if("${mini_test_error}" == "True"){
                         error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
-                    }else{
+                    }else {
+                        echo "Package tests passed, moving to parallel tasks"
+                    }
+
+            parallel(
+                "Trigger Package Testing Job":{
+                    script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                         build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                                                                                                                             
@@ -440,14 +446,17 @@ parameters {
                                     -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                             """
                         } 
+                    }
+                },
+                "Triggering Docker":{
+                    script {
+                        echo "Triggering Docker"
+                        docker pull perconalab/percona-server:"${PS_RELEASE}"
 
-                    } 
+                    }
                 }
-                else
-                {
-                    error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                   // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
-                } 
+            )
+            }
             } 
             deleteDir() 
         }
