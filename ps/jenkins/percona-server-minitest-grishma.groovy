@@ -450,14 +450,18 @@ parameters {
                 },
                 "Triggering Docker":{
                     script {
-                        echo "Triggering Docker"
-                        docker pull perconalab/percona-server:"${PS_RELEASE}"
-
+                        echo "Pulling Docker image: perconalab/percona-server:${PS_RELEASE}"
+                        sh """
+                            docker pull perconalab/percona-server:"${PS_RELEASE}"
+                        """
                     }
                 }
             )
+        }       
+                else {
+                    error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
             }
-            } 
+        }
             deleteDir() 
         }
         failure {
