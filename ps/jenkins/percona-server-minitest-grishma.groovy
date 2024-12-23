@@ -461,6 +461,7 @@ parameters {
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
                             --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
+                            echo "completed succesfully for arm" 
                         """
                     }
                     echo "running the test for AMD"
@@ -480,7 +481,7 @@ parameters {
                             pip3 install --user -r requirements.txt
                             ./run.sh
                         ''' 
-                        echo "Run succesfully"
+                        echo "Run succesfully for amd" 
                     }
                 },
                 "Triggering Docker for ARM64":{
@@ -496,6 +497,7 @@ parameters {
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
                             --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
+                            echo "completed succesfully for arm"
                         """
                     }
                     echo "running test for ARM"
@@ -515,7 +517,7 @@ parameters {
                             pip3 install --user -r requirements.txt
                             ./run.sh
                         '''
-                        echo "Run succesfully"
+                        echo "Run succesfully for arm"
                     }
                 }
             )
