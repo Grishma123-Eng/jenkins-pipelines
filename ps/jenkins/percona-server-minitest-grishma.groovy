@@ -229,7 +229,9 @@ def install_mysql_shell = 'no'
 
 
 pipeline {
-    
+    agent {
+        label 'none'
+    }
     /* environment {
        /* REVISION = ""
         PS_RELEASE = ""
