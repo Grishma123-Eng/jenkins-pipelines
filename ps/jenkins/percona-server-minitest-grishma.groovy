@@ -230,7 +230,7 @@ def install_mysql_shell = 'no'
 
 pipeline {
     agent {
-        label 'docker' 
+        label none
     }
     /* environment {
        /* REVISION = ""
@@ -285,7 +285,7 @@ parameters {
         stage('Preparation') {
             steps {
    
-   
+
                 script {
 
                     env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
@@ -461,7 +461,7 @@ parameters {
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
                             --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
-                            echo "completed succesfully for arm" 
+                            echo "completed succesfully for amd" 
                         """
                     }
                     echo "running the test for AMD"
