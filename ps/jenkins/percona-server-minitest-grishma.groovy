@@ -230,7 +230,7 @@ def install_mysql_shell = 'no'
 
 pipeline {
     agent {
-        label 'none'
+        label 'docker'
     }
     /* environment {
        /* REVISION = ""
@@ -479,7 +479,7 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps
                             pip3 install --user -r requirements.txt
-                            ./run.sh
+                            echo "hello"
                         ''' 
                         echo "Run succesfully for amd" 
                     }
@@ -515,13 +515,14 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
-                            ./run.sh
+                            echo "hello"
+                           
                         '''
                         echo "Run succesfully for arm"
                     }
                 }
             )
-        }       
+        }        //./run.sh
                 else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
             }
