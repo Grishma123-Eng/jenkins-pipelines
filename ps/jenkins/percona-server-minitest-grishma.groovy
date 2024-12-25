@@ -210,7 +210,7 @@ def package_tests_ps80(def nodes) {
             }
         }
     }*/
-    parallel stepsForParallel
+   // parallel stepsForParallel
 }
 
 @Field def mini_test_error = "False"
