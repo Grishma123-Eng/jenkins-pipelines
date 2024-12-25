@@ -183,8 +183,9 @@ def runPlaybook(def nodeName) {
     }
 }
 
-def minitestNodes = [  //"min-bullseye-x64",
-                       "min-bookworm-x64" ]
+def minitestNodes = [  echo "hello" ]
+                        //"min-bullseye-x64",
+                     //  "min-bookworm-x64" ]
                        //"min-centos-7-x64",
                        //"min-ol-8-x64",
                       // "min-focal-x64",
