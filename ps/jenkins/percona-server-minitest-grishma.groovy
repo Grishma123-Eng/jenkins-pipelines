@@ -483,7 +483,12 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps
                             pip3 install --user -r requirements.txt
-                            echo "hello"
+                            echo "Checking if /run.sh exists"
+                            ls -l ./run.sh
+                            chmod +x ./run.sh
+                            echo "Running ./run.sh"
+                            ./run.sh
+                            echo "ran for AMD"
                         ''' 
                         echo "Run succesfully for amd" 
                     }
@@ -519,8 +524,12 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
-                            echo "hello"
-                            /run.sh
+                            set -x
+                            echo "Checking if /run.sh exists"
+                            ls -l ./run.sh
+                            chmod +x ./run.sh
+                            echo "Running ./run.sh"
+                            ./run.sh
                             echo "ran for ARM"
                         '''
                         echo "Run succesfully for arm"
