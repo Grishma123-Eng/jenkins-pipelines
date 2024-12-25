@@ -434,7 +434,7 @@ parameters {
 
             parallel(
                 "Trigger Package Testing Job":{
-                    agent { label 'docker' }
+                    node ( 'docker' ) 
                     script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                         build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
@@ -453,7 +453,7 @@ parameters {
                     }
                 },
                 "Triggering Docker for amd64":{
-                    agent { label 'docker' }
+                    node ( 'docker' )
                     script {
                         echo "Pulling Docker image amd64: perconalab/percona-server:${PS_RELEASE}"
                         sh """
@@ -494,7 +494,7 @@ parameters {
                     }
                 },
                 "Triggering Docker for ARM64":{
-                    agent { label 'docker-32gb-aarch64' }
+                    node ( 'docker-32gb-aarch64' )
                     script {
                         echo "Pulling Docker image arm64: perconalab/percona-server:${PS_RELEASE}"
                         sh """
