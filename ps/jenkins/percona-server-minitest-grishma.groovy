@@ -434,6 +434,7 @@ parameters {
 
             parallel(
                 "Trigger Package Testing Job":{
+                    agent { label 'docker' }
                     script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                         build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
@@ -519,7 +520,8 @@ parameters {
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
                             echo "hello"
-                           
+                            /run.sh
+                            echo "ran for ARM"
                         '''
                         echo "Run succesfully for arm"
                     }
