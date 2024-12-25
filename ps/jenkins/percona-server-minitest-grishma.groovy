@@ -183,9 +183,9 @@ def runPlaybook(def nodeName) {
     }
 }
 
-def minitestNodes = [  echo "hello" ]
+def minitestNodes = [ 
                         //"min-bullseye-x64",
-                     //  "min-bookworm-x64" ]
+                         "min-bookworm-x64" ]
                        //"min-centos-7-x64",
                        //"min-ol-8-x64",
                       // "min-focal-x64",
@@ -196,7 +196,9 @@ def minitestNodes = [  echo "hello" ]
 
 
 def package_tests_ps80(def nodes) {
-    def stepsForParallel = [:]
+
+    echo "hello"
+    /*def stepsForParallel = [:]
     for (int i = 0; i < nodes.size(); i++) {
         def nodeName = nodes[i]
         stepsForParallel[nodeName] = {
@@ -207,7 +209,7 @@ def package_tests_ps80(def nodes) {
                 }
             }
         }
-    }
+    }*/
     parallel stepsForParallel
 }
 
