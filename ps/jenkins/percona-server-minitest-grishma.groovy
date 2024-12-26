@@ -433,7 +433,7 @@ parameters {
                     }
 
             parallel(
-                "Trigger Package Testing Job":{
+               /* "Trigger Package Testing Job":{
                     node ( 'docker' ) {
                     script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
@@ -452,49 +452,8 @@ parameters {
                         } 
                     }
                     }
-                },
-                "Triggering Docker for amd64":{
-                    node ( 'docker' ){
-                    script {
-                        echo "Pulling Docker image amd64: perconalab/percona-server:${PS_RELEASE}"
-                        sh """
-                            docker pull perconalab/percona-server:"${PS_RELEASE}"
-                            sudo yum install -y curl wget git
-                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
-                            echo "completed succesfully for amd" 
-                        """
-                    }
-                    echo "running the test for AMD"
-                    script {
-                        sh '''
-                            # disable THP on the host for TokuDB
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
-                            chmod +x disable_thp.sh
-                            sudo ./disable_thp.sh
-                            # run test
-                            export PATH=${PATH}:~/.local/bin
-                            sudo yum install -y python3 python3-pip
-                            rm -rf package-testing
-                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
-                            cd package-testing/docker-image-tests/ps
-                            pip3 install --user -r requirements.txt
-                            echo "Checking if /run.sh exists"
-                            ls -l ./run.sh
-                            chmod +x ./run.sh
-                            echo "Running ./run.sh"
-                            ./run.sh
-                            echo "ran for AMD"
-                        ''' 
-                        echo "Run succesfully for amd" 
-                    }
-                    }
-                },
+                }, */
+                
                 "Triggering Docker for ARM64":{
                     node ( 'docker-32gb-aarch64' ){
                     script {
@@ -537,6 +496,48 @@ parameters {
                         echo "Run succesfully for arm"
                     }
                 }
+                },
+                "Triggering Docker for amd64":{
+                    node ( 'docker' ){
+                    script {
+                        echo "Pulling Docker image amd64: perconalab/percona-server:${PS_RELEASE}"
+                        sh """
+                            docker pull perconalab/percona-server:"${PS_RELEASE}"
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
+                            echo "completed succesfully for amd" 
+                        """
+                    }
+                    echo "running the test for AMD"
+                    script {
+                        sh '''
+                            # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps
+                            pip3 install --user -r requirements.txt
+                            echo "Checking if /run.sh exists"
+                            ls -l ./run.sh
+                            chmod +x ./run.sh
+                            echo "Running ./run.sh"
+                            ./run.sh
+                            echo "ran for AMD"
+                        ''' 
+                        echo "Run succesfully for amd" 
+                    }
+                    }
                 }
             )
         }        //./run.sh
