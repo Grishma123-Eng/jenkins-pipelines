@@ -140,18 +140,18 @@ def runPlaybook(def nodeName) {
             echo "PS_RELEASE : ${env.PS_RELEASE}"
             env.PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
             echo "Version is for : ${env.PS_VERSION_KEY}"
-            env.ps_version = "PS${env.PS_VERSION_KEY.replace('.', '')}"
-            echo "Value is : ${env.ps_version}"
+            env.PS_VERSION = "PS${env.PS_VERSION_KEY.replace('.', '')}"
+            echo "Value is : ${env.PS_VERSION}"
         } 
-        echo "Using ps_version in another function: ${env.ps_version}"
+        echo "Using PS_VERSION in another function: ${env.PS_VERSION}"
         def playbook //= "ps_80.yml"
         def playbook_path //= "package-testing/playbooks/${playbook}"
         def client_to_test
 
-        if (env.ps_version == 'PS80') {
+        if (env.PS_VERSION == 'PS80') {
             playbook = "ps_80.yml"
             env.client_to_test = "ps80"
-        } else if (env.ps_version == 'PS84') {
+        } else if (env.PS_VERSION == 'PS84') {
             playbook = "ps_84.yml"
             env.client_to_test = "ps84"
         } else {
@@ -216,8 +216,8 @@ def package_tests_ps80(def nodes) {
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
 /*def product_to_test
-if (env.ps_version == 'PS80' || env.ps_version == 'PS84') {
-product_to_test = "${env.ps_version}"
+if (env.PS_VERSION == 'PS80' || env.PS_VERSION == 'PS84') {
+product_to_test = "${env.PS_VERSION}"
 }
 else {
 product_to_test = 'client_test'  // Default value or handle other conditions
@@ -239,7 +239,7 @@ pipeline {
        /* REVISION = ""
         PS_RELEASE = ""
         PS_VERSION_KEY = ""
-        ps_version = "" 
+        PS_VERSION = "" 
         product_to_test = ""
     } */
     
@@ -295,14 +295,14 @@ parameters {
                     echo "PS_RELEASE: ${env.PS_RELEASE}"
                     env.PS_VERSION_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
                     echo "PS_VERSION_KEY: ${env.PS_VERSION_KEY}"
-                    env.ps_version = "PS${env.PS_VERSION_KEY.replace('.', '')}"
-                    echo "ps_version: ${env.ps_version}"
+                    env.PS_VERSION = "PS${env.PS_VERSION_KEY.replace('.', '')}"
+                    echo "PS_VERSION: ${env.PS_VERSION}"
                     def product_to_test
-                    if (env.ps_version == 'PS80' ) {
+                    if (env.PS_VERSION == 'PS80' ) {
                         product_to_test = "ps_80"
                         echo "product to test is ps80"
                     } 
-                    else if (env.ps_version == 'PS84' ) {
+                    else if (env.PS_VERSION == 'PS84' ) {
                         product_to_test = "ps_84"
                         echo "product to test is ps84"
                     } 
@@ -373,11 +373,11 @@ parameters {
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
-                ps_version = "PS${PS_VERSION_KEY.replace('.', '')}" */
+                PS_VERSION = "PS${PS_VERSION_KEY.replace('.', '')}" */
                 echo "Revision is: ${REVISION}"
                 echo "PS_RELEASE is: ${PS_RELEASE}"
                 echo "PS_VERSION_KEY is: ${PS_VERSION_KEY}"
-                echo "Value is : ${ps_version}"
+                echo "Value is : ${PS_VERSION}"
                 
                 if (env.product_to_test == 'PS80') {
                     echo "Running PS80-specific steps"
@@ -388,8 +388,8 @@ parameters {
                 }
 
             // PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
-                if("${ps_version}"){
-                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${ps_version}"
+                if("${PS_VERSION}"){
+                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
@@ -399,19 +399,19 @@ parameters {
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
                         git checkout testing-branch 
-                        echo "${ps_version} is the VALUE!!@!"
-                        export RELEASE_VER_VAL="${ps_version}"
+                        echo "${PS_VERSION} is the VALUE!!@!"
+                        export RELEASE_VER_VAL="${PS_VERSION}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
                             echo "\$RELEASE_VER_VAL is a valid version"
-                            OLD_REV=\$(cat VERSIONS | grep ${ps_version}_REV | cut -d '=' -f2- )
+                            OLD_REV=\$(cat VERSIONS | grep ${PS_VERSION}_REV | cut -d '=' -f2- )
                             echo "OLD_REV is : \${OLD_REV}"
-                            OLD_VER=\$(cat VERSIONS | grep ${ps_version}_VER | cut -d '=' -f2- )
+                            OLD_VER=\$(cat VERSIONS | grep ${PS_VERSION}_VER | cut -d '=' -f2- )
                             echo "OLD_VER is : \${OLD_VER}"
-                            sed -i s/${ps_version}_REV=\$OLD_REV/${ps_version}_REV='"'${REVISION}'"'/g VERSIONS
-                            sed -i s/${ps_version}_VER=\$OLD_VER/${ps_version}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            sed -i s/${PS_VERSION}_REV=\$OLD_REV/${PS_VERSION}_REV='"'${REVISION}'"'/g VERSIONS
+                            sed -i s/${PS_VERSION}_VER=\$OLD_VER/${PS_VERSION}_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
                         else
-                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${ps_version}"
+                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${PS_VERSION}"
                         fi
                         git diff
                         if [[ -z \$(git diff) ]]; then
@@ -419,7 +419,7 @@ parameters {
                         else
                             echo "There are changes"
                             git add -A
-                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${ps_version} package testing VERSIONS file."
+                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${PS_VERSION} package testing VERSIONS file."
                             git push
                         fi
                     """
@@ -447,7 +447,7 @@ parameters {
                                     -H "Accept: application/vnd.github.v3+json" \
                                     -H "Authorization: token ${GITHUB_API_TOKEN}" \
                                     "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                    -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
+                                    -d '{"ref":"main","inputs":{"PS_VERSION":"${PS_RELEASE}"}}'
                             """
                         } 
                     }
