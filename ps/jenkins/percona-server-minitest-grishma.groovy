@@ -473,7 +473,7 @@ parameters {
                                 echo "Unsupported architecture: \$ARCH"
                                 exit 1
                             fi
-                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-\${ARCH}.tar.gz -C /usr/local/bin/
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
                             sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
@@ -527,7 +527,7 @@ parameters {
                                 echo "Unsupported architecture: \$ARCH"
                                 exit 1
                             fi
-                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-\${ARCH}.tar.gz -C /usr/local/bin/
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
                             sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
