@@ -473,7 +473,6 @@ parameters {
                                 echo "Unsupported architecture: \$ARCH"
                                 exit 1
                             fi
-                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
                             sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-\${ARCH}.tar.gz -C /usr/local/bin/
                             sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
@@ -528,7 +527,6 @@ parameters {
                                 echo "Unsupported architecture: \$ARCH"
                                 exit 1
                             fi
-                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
                             sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-\${ARCH}.tar.gz -C /usr/local/bin/
                             sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
