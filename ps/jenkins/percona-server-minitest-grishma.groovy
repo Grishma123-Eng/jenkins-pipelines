@@ -236,7 +236,7 @@ pipeline {
         label 'docker'
     }
     /* environment {
-       /* PS_REVISION = ""
+       /* REVISION = ""
         PS_RELEASE = ""
         PS_VERSION_SHORT_KEY = ""
         PS_VERSION_SHORT = "" 
@@ -367,14 +367,14 @@ parameters {
             unstash 'properties' 
             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-                PS_REVISION = sh(returnStdout: true, script: "grep PS_REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+                REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
                 /*PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_SHORT_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_SHORT_KEY}"
                 PS_VERSION_SHORT = "PS${PS_VERSION_SHORT_KEY.replace('.', '')}" */
-                echo "Revision is: ${PS_REVISION}"
+                echo "Revision is: ${REVISION}"
                 echo "PS_RELEASE is: ${PS_RELEASE}"
                 echo "PS_VERSION_SHORT_KEY is: ${PS_VERSION_SHORT_KEY}"
                 echo "Value is : ${PS_VERSION_SHORT}"
@@ -408,7 +408,7 @@ parameters {
                             echo "OLD_REV is : \${OLD_REV}"
                             OLD_VER=\$(cat VERSIONS | grep ${PS_VERSION_SHORT}_VER | cut -d '=' -f2- )
                             echo "OLD_VER is : \${OLD_VER}"
-                            sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${PS_REVISION}'"'/g VERSIONS
+                            sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${REVISION}'"'/g VERSIONS
                             sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/${PS_VERSION_SHORT}_VER='"'${PS_RELEASE}'"'/g VERSIONS
                             echo 
 
@@ -421,7 +421,7 @@ parameters {
                         else
                             echo "There are changes"
                             git add -A
-                        git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
+                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
                             git push
                         fi
                     """
