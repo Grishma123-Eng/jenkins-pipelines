@@ -500,7 +500,7 @@ parameters {
                             echo "Checking if /run.sh exists"
                             ls -l ./run.sh
                             chmod +x ./run.sh
-                            echo "printing variables: \$docker_acc , \$ps_version, \$ps_revision"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION, \$PS_REVISION"
                             ./run.sh
                             echo "ran for ARM"
                         '''
