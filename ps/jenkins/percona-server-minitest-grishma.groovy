@@ -367,14 +367,14 @@ parameters {
             unstash 'properties' 
             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-                PS_REVISION = sh(returnStdout: true, script: "grep PS_REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+                env.PS_REVISION = sh(returnStdout: true, script: "grep PS_REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
                 /*PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
                 echo "PS_RELEASE : ${PS_RELEASE}"
                 PS_VERSION_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
                 echo "Version is for : ${PS_VERSION_KEY}"
                 PS_VERSION = "PS${PS_VERSION_KEY.replace('.', '')}" */
-                echo "Revision is: ${PS_REVISION}"
+                echo "Revision is: ${env.PS_REVISION}"
                 echo "PS_RELEASE is: ${PS_RELEASE}"
                 echo "PS_VERSION_KEY is: ${PS_VERSION_KEY}"
                 echo "Value is : ${PS_VERSION}"
@@ -410,6 +410,7 @@ parameters {
                             echo "OLD_VER is : \${OLD_VER}"
                             sed -i s/${PS_VERSION}_REV=\$OLD_REV/${PS_VERSION}_REV='"'${PS_REVISION}'"'/g VERSIONS
                             sed -i s/${PS_VERSION}_VER=\$OLD_VER/${PS_VERSION}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            echo 
 
                         else
                             echo "INVALID PS8_RELEASE_VERSION VALUE: ${PS_VERSION}"
@@ -501,7 +502,7 @@ parameters {
                             echo "Checking if /run.sh exists"
                             ls -l ./run.sh
                             chmod +x ./run.sh
-                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION, \$PS_PS_REVISION"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION, \$PS_REVISION"
                             ./run.sh
                             echo "ran for ARM"
                         '''
