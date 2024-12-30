@@ -502,7 +502,7 @@ parameters {
                             echo "Checking if /run.sh exists"
                             ls -l ./run.sh
                             chmod +x ./run.sh
-                            export PS_VERSION= \$PS_RELEASE  
+                            export PS_VERSION= "\$PS_RELEASE"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION "
                             ./run.sh
                             echo "ran for ARM"
@@ -556,7 +556,7 @@ parameters {
                             echo "Checking if /run.sh exists"
                             ls -l ./run.sh
                             chmod +x ./run.sh
-                            export PS_VERSION= \$PS_RELEASE
+                            export PS_VERSION= "\$PS_RELEASE"
                             echo "Running ./run.sh"
                             ./run.sh
                             echo "ran for AMD"
