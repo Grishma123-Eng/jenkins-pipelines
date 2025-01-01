@@ -457,36 +457,26 @@ parameters {
                 },*/
                 
                 "Triggering Docker for ARM64":{
-                    node ( 'docker-32gb-aarch64' ){
+                    node ( 'docker' ){
                     script {
                         echo "Pulling Docker image arm64: perconalab/percona-server:${PS_RELEASE}"
                         sh """
                             docker pull perconalab/percona-server:"${PS_RELEASE}"
                             sudo yum install -y curl wget git
                             TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                            ARCH=\$(uname -m)
-                            if [ "\$ARCH" = "x86_64" ]; then
-                                echo "Detected architecture: x86_64 (AMD64)"
-                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                            elif [ "\$ARCH" = "aarch64" ]; then
-                                echo "Detected architecture: aarch64 (ARM64)"
-                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
-                            else
-                                echo "Unsupported architecture: \$ARCH"
-                                exit 1
-                            fi
-                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
-                            sudo chmod +x /usr/local/bin/trivy
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:${PS_RELEASE}
                             echo "completed succesfully for arm"
                         """
                     }
                     echo "running test for ARM"
+                    node ( 'docker-32gb-aarch64' )
                     script{
                         sh '''
-                            # disable THP on the host for TokuDB
+                             # disable THP on the host for TokuDB
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
                             chmod +x disable_thp.sh
@@ -498,12 +488,8 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
-                            set -x
-                            echo "Checking if /run.sh exists"
-                            ls -l ./run.sh
-                            chmod +x ./run.sh
                             export PS_VERSION="${PS_RELEASE}"
-                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \${PS_REVISION} "
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
                             echo "ran for ARM"
                         '''
