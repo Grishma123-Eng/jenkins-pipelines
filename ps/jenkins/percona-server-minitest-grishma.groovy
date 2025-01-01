@@ -457,7 +457,7 @@ parameters {
                 },*/
                 
                 "Triggering Docker for ARM64":{
-                    node ( 'docker' ){
+                    node ( 'docker-32gb-aarch64' ){
                     script {
                         echo "Pulling Docker image arm64: perconalab/percona-server:${PS_RELEASE}"
                         sh """
@@ -473,7 +473,6 @@ parameters {
                         """
                     }
                     echo "running test for ARM"
-                    node ( 'docker-32gb-aarch64' )
                     script{
                         sh '''
                              # disable THP on the host for TokuDB
