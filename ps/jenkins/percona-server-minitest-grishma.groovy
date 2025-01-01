@@ -519,24 +519,13 @@ parameters {
                             docker pull perconalab/percona-server:"${PS_RELEASE}"
                             sudo yum install -y curl wget git
                             TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                            ARCH=\$(uname -m)
-                            if [ "\$ARCH" = "x86_64" ]; then
-                                echo "Detected architecture: x86_64 (AMD64)"
-                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                            elif [ "\$ARCH" = "aarch64" ]; then
-                                echo "Detected architecture: aarch64 (ARM64)"
-                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
-                            else
-                                echo "Unsupported architecture: \$ARCH"
-                                exit 1
-                            fi
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
                             sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                            sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:${PS_RELEASE}.1-multi
                             echo "completed succesfully for amd" 
-                        """
+                        """ 
                     }
                     echo "running the test for AMD"
                     script {
@@ -553,13 +542,7 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps
                             pip3 install --user -r requirements.txt
-                            echo "Checking if /run.sh exists"
-                            ls -l ./run.sh
-                            chmod +x ./run.sh
-                            export PS_VERSION="${PS_RELEASE}"
-                            echo "Running ./run.sh"
                             ./run.sh
-                            echo "ran for AMD"
                         ''' 
                         echo "Run succesfully for amd" 
                     }
