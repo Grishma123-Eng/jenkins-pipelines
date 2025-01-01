@@ -454,28 +454,36 @@ parameters {
                         } 
                     }
                     }
-                },*/
-                "Run trivy analyzer":{
-                    node ( 'docker') {
-                    script {
-                        echo "Pulling Docker image : perconalab/percona-server:${PS_RELEASE}"
+                },*/      
+                "Triggering Docker for ARM64":{
+                    node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        echo "Pulling Docker image arm: perconalab/percona-server:${PS_RELEASE}"
                         sh """
+                            docker pull perconalab/percona-server:"${PS_RELEASE}"
                             sudo yum install -y curl wget git
                             TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                            ARCH=\$(uname -m)
+                            if [ "\$ARCH" = "x86_64" ]; then
+                                echo "Detected architecture: x86_64 (AMD64)"
+                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            elif [ "\$ARCH" = "aarch64" ]; then
+                                echo "Detected architecture: aarch64 (ARM64)"
+                                wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
+                            else
+                                echo "Unsupported architecture: \$ARCH"
+                                exit 1
+                            fi
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
+                            sudo chmod +x /usr/local/bin/trivy
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:${PS_RELEASE}
-                            echo "Ran Trivy"
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
                         """
-                    }
-                    }
-                },          
-                "Triggering Docker for ARM64":{
-                    node ( 'docker-32gb-aarch64' ) {         
+
+                    }      
+                    echo "running test for ARM"
                     script{
-                        echo "running test for ARM"
                         sh '''
                              # disable THP on the host for TokuDB
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
@@ -501,7 +509,21 @@ parameters {
                 "Triggering Docker for amd64":{
                     node ( 'docker' ) {
                     script {
-                        echo "running the test for AMD"
+                        echo "Pulling Docker image for AMD: perconalab/percona-server:${PS_RELEASE}"
+                        sh """
+                            docker pull perconalab/percona-server:"${PS_RELEASE}"
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:${PS_RELEASE}
+                            echo "Ran Trivy"
+                        """
+                    }
+                    echo "running the test for AMD" 
+                    script {
                         sh '''
                             # disable THP on the host for TokuDB
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
