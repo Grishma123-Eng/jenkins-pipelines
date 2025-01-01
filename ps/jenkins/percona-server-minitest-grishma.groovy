@@ -460,7 +460,7 @@ parameters {
                     script{
                         echo "Pulling Docker image arm: perconalab/percona-server:${PS_RELEASE}"
                         sh """
-                            docker pull --platform linux/arm64 perconalab/percona-server:"${PS_RELEASE}"
+                            docker pull --platform linux/arm64 perconalab/percona-server:"${PS_RELEASE}-arm64"
                             sudo yum install -y curl wget git
                             TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
                             ARCH=\$(uname -m)
