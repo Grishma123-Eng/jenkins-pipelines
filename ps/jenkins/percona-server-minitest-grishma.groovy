@@ -542,6 +542,8 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps
                             pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION "
                             ./run.sh
                         ''' 
                         echo "Run succesfully for amd" 
