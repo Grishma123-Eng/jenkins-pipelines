@@ -460,7 +460,7 @@ parameters {
                     script{
                         echo "Pulling Docker image arm: perconalab/percona-server:${PS_RELEASE}"
                         sh """
-                            docker pull perconalab/percona-server:"${PS_RELEASE}"
+                            docker pull --platform linux/arm64 perconalab/percona-server:"${PS_RELEASE}"
                             sudo yum install -y curl wget git
                             TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
                             ARCH=\$(uname -m)
@@ -499,6 +499,13 @@ parameters {
                             pip3 install --user -r requirements.txt
                             export PS_VERSION="${PS_RELEASE}"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            container_name="ps-docker-test-${PS_RELEASE}"
+                            docker run --name \$container_name -d perconalab/percona-server:"${PS_RELEASE}"
+                            if ! docker ps | grep -q "\$container_name"; then
+                                echo "Container \$container_name is not running!"
+                                exit 1
+                            fi
+                            docker exec --user root \$container_name microdnf install net-tools -y
                             ./run.sh
                             echo "ran for ARM"
                         '''
