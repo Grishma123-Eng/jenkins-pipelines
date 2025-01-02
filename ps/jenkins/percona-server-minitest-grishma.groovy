@@ -456,7 +456,7 @@ parameters {
                     }
                 },*/      
                 "Triggering Docker for ARM64":{
-                    agent { label 'docker-32gb-aarch64' }  {   
+                    node ( 'docker-32gb-aarch64' )  {   
                     script{
                         echo "Pulling Docker image arm: perconalab/percona-server:${PS_RELEASE}"
                         sh """
