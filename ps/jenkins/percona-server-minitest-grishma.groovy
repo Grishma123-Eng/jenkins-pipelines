@@ -496,7 +496,7 @@ parameters {
                         echo "Run succesfully for arm" 
                     } 
                 }
-                }
+                },
                 "Triggering Docker for amd64":{
                     node ( 'docker' ) {
                     script {
