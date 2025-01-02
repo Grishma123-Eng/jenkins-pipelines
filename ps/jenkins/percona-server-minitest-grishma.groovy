@@ -449,7 +449,10 @@ parameters {
             parallel(
                 "Trigger Package Testing Job":{
                     node ( 'docker' ) {
-                    script {
+                     script {
+                        echo "It's just a testing purpose"
+                     }   
+                    /*script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                         build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                                                                                                                             
@@ -464,7 +467,7 @@ parameters {
                                     -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
                             """
                         } 
-                    }
+                    }*/
                     }
                 },     
                 "Triggering Docker for ARM64":{
