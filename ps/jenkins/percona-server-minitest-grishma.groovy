@@ -475,6 +475,7 @@ parameters {
                     script{
                         sh '''
                             echo "running test for ARM"
+                            export DOCKER_PLATFORM=linux/arm64
                             # disable THP on the host for TokuDB
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
                             echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
@@ -489,6 +490,7 @@ parameters {
                             pip3 install --user -r requirements.txt
                             export PS_VERSION="${PS_RELEASE}"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            docker run --platform linux/arm64 --rm perconalab/percona-server:"${PS_RELEASE}"
                             ./run.sh
                             echo "ran for ARM"
                         '''
