@@ -456,7 +456,7 @@ parameters {
                     }
                 },*/      
                 "Triggering Docker for ARM64":{
-                    node ( 'docker-32gb-aarch64' ) {   
+                    agent { label 'docker-32gb-aarch64' }  {   
                     script{
                         echo "Pulling Docker image arm: perconalab/percona-server:${PS_RELEASE}"
                         sh """
@@ -480,9 +480,36 @@ parameters {
                             /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
                             --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL perconalab/percona-server:"${PS_RELEASE}"
                         """
+                        echo "running test for ARM"
+                         sh '''
+                             # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps-arm
+                            pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            container_name="ps-docker-test-${PS_RELEASE}"
+                            docker run --name \$container_name -d perconalab/percona-server:"${PS_RELEASE}"
+                            if ! docker ps | grep -q "\$container_name"; then
+                                echo "Container \$container_name is not running!"
+                                exit 1
+                            fi
+                            docker exec --user root \$container_name microdnf install net-tools -y
+                            ./run.sh
+                            echo "ran for ARM"
+                        '''
+                        echo "Run succesfully for arm"
 
                     }      
-                    echo "running test for ARM"
+                 /*   echo "running test for ARM"
                     script{
                         sh '''
                              # disable THP on the host for TokuDB
@@ -509,8 +536,8 @@ parameters {
                             ./run.sh
                             echo "ran for ARM"
                         '''
-                        echo "Run succesfully for arm"
-                    }
+                        echo "Run succesfully for arm" 
+                    } */
                 }
                 },
                 "Triggering Docker for amd64":{
