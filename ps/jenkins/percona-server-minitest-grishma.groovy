@@ -447,7 +447,7 @@ parameters {
                     }
 
             parallel(
-               /* "Trigger Package Testing Job":{
+                "Trigger Package Testing Job":{
                     node ( 'docker' ) {
                     script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
@@ -466,7 +466,7 @@ parameters {
                         } 
                     }
                     }
-                },*/      
+                },     
                 "Triggering Docker for ARM64":{
                     node ( 'docker-32gb-aarch64' ) {   
                     script{
@@ -492,8 +492,8 @@ parameters {
                         echo "Run succesfully for arm" 
                     } 
                 }
-                },
-                "Triggering Docker for amd64":{
+                }
+               /* "Triggering Docker for amd64":{
                     node ( 'docker' ) {
                     script {
                         sh '''
@@ -517,7 +517,7 @@ parameters {
                         echo "Run succesfully for amd" 
                     }
                     }
-                }
+                }*/
             )
         }        //./run.sh
                 else {
