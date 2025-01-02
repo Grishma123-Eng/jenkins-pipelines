@@ -197,8 +197,8 @@ def minitestNodes = [
 
 def package_tests_ps80(def nodes) {
 
-    echo "hello"
-    /*def stepsForParallel = [:]
+    //echo "hello"
+    def stepsForParallel = [:]
     for (int i = 0; i < nodes.size(); i++) {
         def nodeName = nodes[i]
         stepsForParallel[nodeName] = {
@@ -209,7 +209,7 @@ def package_tests_ps80(def nodes) {
                 }
             }
         }
-    }*/
+    }
    // parallel stepsForParallel
 }
 
@@ -452,7 +452,7 @@ parameters {
                      script {
                         echo "It's just a testing purpose"
                      }   
-                    /*script {
+                    script {
                         echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                         build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                                                                                                                             
@@ -467,7 +467,7 @@ parameters {
                                     -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
                             """
                         } 
-                    }*/
+                    }
                     }
                 },     
                 "Triggering Docker for ARM64":{
@@ -497,7 +497,7 @@ parameters {
                     } 
                 }
                 }
-               /* "Triggering Docker for amd64":{
+                "Triggering Docker for amd64":{
                     node ( 'docker' ) {
                     script {
                         sh '''
@@ -521,7 +521,7 @@ parameters {
                         echo "Run succesfully for amd" 
                     }
                     }
-                }*/
+                }
             )
         }        //./run.sh
                 else {
