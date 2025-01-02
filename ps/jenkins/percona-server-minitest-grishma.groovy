@@ -488,9 +488,8 @@ parameters {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
-                            export PS_VERSION="${PS_RELEASE}"
+                            export PS_VERSION="${PS_RELEASE}.1-aarch64"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
-                            docker run --platform linux/arm64 --rm perconalab/percona-server:"${PS_RELEASE}"
                             ./run.sh
                             echo "ran for ARM"
                         '''
