@@ -210,6 +210,69 @@ def package_tests_ps80(def nodes) {
     parallel stepsForParallel
 }
 
+def docker_test() {
+    def stepsForParallel = [:] 
+        stepsForParallel['Run for ARM64'] = {
+        stage("Run for ARM64") {
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh '''
+                            echo "running test for ARM"
+                            export DOCKER_PLATFORM=linux/arm64
+                            # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps-arm
+                            pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}.1-aarch64"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            ./run.sh
+                            echo "ran for ARM"
+                        '''
+                        echo "Run succesfully for arm" 
+                    } 
+                }
+            }
+        }
+
+        stepsForParallel['Run for AMD'] = {
+            stage("Run for AMD") {
+                node ( 'docker' ) {
+                        script {
+                            sh '''
+                                echo "running the test for AMD" 
+                                # disable THP on the host for TokuDB
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                                chmod +x disable_thp.sh
+                                sudo ./disable_thp.sh
+                                # run test
+                                export PATH=${PATH}:~/.local/bin
+                                sudo yum install -y python3 python3-pip
+                                rm -rf package-testing
+                                git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                                cd package-testing/docker-image-tests/ps
+                                pip3 install --user -r requirements.txt
+                                export PS_VERSION="${PS_RELEASE}"
+                                echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
+                                ./run.sh
+                            ''' 
+                            echo "Run succesfully for amd" 
+                        }
+                    }
+                }
+            }   
+    parallel stepsForParallel
+        
+}
+
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
 /*def product_to_test
@@ -443,7 +506,13 @@ parameters {
                         echo "Package tests passed, moving to parallel tasks"
                     }
 
-            parallel(
+                    echo "starting docker job"
+                    docker_test()
+                    echo "ARM and AMD run successfully."
+
+
+
+        /*  parallel(
                 "Trigger Package Testing Job":{
                     node ( 'docker' ) {
                      script {
@@ -519,7 +588,7 @@ parameters {
                     }
                     }
                 }
-            )
+            )*/
         }        //./run.sh
                 else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
