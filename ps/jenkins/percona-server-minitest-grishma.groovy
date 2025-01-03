@@ -213,7 +213,7 @@ def package_tests_ps80(def nodes) {
 def docker_test() {
     def stepsForParallel = [:] 
         stepsForParallel['Run for ARM64'] = {
-        stage("Run for ARM64") {
+        stage("Docker image for ARM64") {
             node ( 'docker-32gb-aarch64' ) {   
                     script{
                         sh '''
@@ -234,7 +234,6 @@ def docker_test() {
                             export PS_VERSION="${PS_RELEASE}.1-aarch64"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
-                            echo "ran for ARM"
                         '''
                         echo "Run succesfully for arm" 
                     } 
@@ -243,7 +242,7 @@ def docker_test() {
         }
 
         stepsForParallel['Run for AMD'] = {
-            stage("Run for AMD") {
+            stage("Docker image for AMD") {
                 node ( 'docker' ) {
                         script {
                             sh '''
@@ -268,7 +267,62 @@ def docker_test() {
                         }
                     }
                 }
-            }   
+            }
+        stepsForParallel['Run for multi docker image ARM64'] = {
+        stage("Multi-Docker image for ARM64") {
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh '''
+                            echo "running test for ARM"
+                            export DOCKER_PLATFORM=linux/arm64
+                            # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps-arm
+                            pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}.1-multi"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            ./run.sh
+                        '''
+                        echo "Run succesfully for Multi docker image of arm" 
+                    } 
+                }
+            }
+        }
+        stepsForParallel['Run for multi docker image AMD'] = {
+            stage("Multi-Docker image for AMD") {
+                node ( 'docker' ) {
+                        script {
+                            sh '''
+                                echo "running the test for AMD" 
+                                # disable THP on the host for TokuDB
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                                chmod +x disable_thp.sh
+                                sudo ./disable_thp.sh
+                                # run test
+                                export PATH=${PATH}:~/.local/bin
+                                sudo yum install -y python3 python3-pip
+                                rm -rf package-testing
+                                git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                                cd package-testing/docker-image-tests/ps
+                                pip3 install --user -r requirements.txt
+                                export PS_VERSION="${PS_RELEASE}1-multi"
+                                echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
+                                ./run.sh
+                            ''' 
+                            echo "Run succesfully for Multi docker image of amd" 
+                        }
+                    }
+                }
+            }      
     parallel stepsForParallel
         
 }
@@ -441,11 +495,6 @@ parameters {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
                 env.PS_REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
-                /*PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
-                echo "PS_RELEASE : ${PS_RELEASE}"
-                PS_VERSION_SHORT_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
-                echo "Version is for : ${PS_VERSION_SHORT_KEY}"
-                PS_VERSION_SHORT = "PS${PS_VERSION_SHORT_KEY.replace('.', '')}" */
                 echo "Revision is: ${env.PS_REVISION}"
                 echo "PS_RELEASE is: ${PS_RELEASE}"
                 echo "PS_VERSION_SHORT_KEY is: ${PS_VERSION_SHORT_KEY}"
@@ -509,87 +558,7 @@ parameters {
                     echo "starting docker job"
                     docker_test()
                     echo "ARM and AMD run successfully."
-
-
-
-        /*  parallel(
-                "Trigger Package Testing Job":{
-                    node ( 'docker' ) {
-                     script {
-                        echo "It's just a testing purpose"
-                     }   
-                    script {
-                        echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                        build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
-                                                                                                                                            
-                        echo "Trigger PMM_PS Github Actions Workflow"
-                        
-                        withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
-                            sh """
-                                curl -i -v -X POST \
-                                    -H "Accept: application/vnd.github.v3+json" \
-                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \
-                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                    -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
-                            """
-                        } 
-                    }
-                    }
-                },     
-                "Triggering Docker for ARM64":{
-                    node ( 'docker-32gb-aarch64' ) {   
-                    script{
-                        sh '''
-                            echo "running test for ARM"
-                            export DOCKER_PLATFORM=linux/arm64
-                            # disable THP on the host for TokuDB
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
-                            chmod +x disable_thp.sh
-                            sudo ./disable_thp.sh
-                            # run test
-                            export PATH=${PATH}:~/.local/bin
-                            sudo yum install -y python3 python3-pip
-                            rm -rf package-testing
-                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
-                            cd package-testing/docker-image-tests/ps-arm
-                            pip3 install --user -r requirements.txt
-                            export PS_VERSION="${PS_RELEASE}.1-aarch64"
-                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
-                            ./run.sh
-                            echo "ran for ARM"
-                        '''
-                        echo "Run succesfully for arm" 
-                    } 
-                }
-                },
-                "Triggering Docker for amd64":{
-                    node ( 'docker' ) {
-                    script {
-                        sh '''
-                            echo "running the test for AMD" 
-                            # disable THP on the host for TokuDB
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
-                            chmod +x disable_thp.sh
-                            sudo ./disable_thp.sh
-                            # run test
-                            export PATH=${PATH}:~/.local/bin
-                            sudo yum install -y python3 python3-pip
-                            rm -rf package-testing
-                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
-                            cd package-testing/docker-image-tests/ps
-                            pip3 install --user -r requirements.txt
-                            export PS_VERSION="${PS_RELEASE}"
-                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
-                            ./run.sh
-                        ''' 
-                        echo "Run succesfully for amd" 
-                    }
-                    }
-                }
-            )*/
-        }        //./run.sh
+        }    
                 else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
             }
