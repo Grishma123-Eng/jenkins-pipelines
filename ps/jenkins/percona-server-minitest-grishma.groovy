@@ -547,17 +547,21 @@ parameters {
                         fi
                     """
                     }
-                    echo "Start Minitests for PS"                
-                    package_tests_ps80(minitestNodes)
-                    if("${mini_test_error}" == "True"){
-                        error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
-                    }else {
-                        echo "Package tests passed, moving to parallel tasks"
-                    }
-
-                    echo "starting docker job"
-                    docker_test()
-                    echo "ARM and AMD run successfully."
+                    parallel(
+                        "Start Minitests for PS": {
+                            package_tests_ps80(minitestNodes)
+                            if("${mini_test_error}" == "True"){
+                                error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
+                            }else {
+                                echo "Package tests passed, moving to parallel tasks"
+                            }  
+                        },
+                        "Start docker job": {
+                            docker_test()
+                            echo "DOCKER images run successfully."
+                        }
+                    )
+                    //echo "Start Minitests for PS"                
         }    
                 else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
