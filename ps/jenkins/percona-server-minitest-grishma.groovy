@@ -314,7 +314,7 @@ def docker_test() {
                                 git clone https://github.com/Percona-QA/package-testing.git --depth 1
                                 cd package-testing/docker-image-tests/ps
                                 pip3 install --user -r requirements.txt
-                                export PS_VERSION="${PS_RELEASE}1-multi"
+                                export PS_VERSION="${PS_RELEASE}.1-multi"
                                 echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
                                 ./run.sh
                             ''' 
