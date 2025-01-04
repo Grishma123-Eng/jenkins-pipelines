@@ -553,22 +553,19 @@ parameters {
                             if("${mini_test_error}" == "True"){
                                 error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
                             }else {
-                                echo "Package tests passed, moving to parallel tasks"
-                            }
-                            script {
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
-                                 withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
-                                sh """
-                                    curl -i -v -X POST \
-                                        -H "Accept: application/vnd.github.v3+json" \
-                                        -H "Authorization: token ${GITHUB_API_TOKEN}" \
-                                        "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                        -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
-                                """
-                            } 
-                        }  
+                                withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
+                                    sh """
+                                        curl -i -v -X POST \
+                                            -H "Accept: application/vnd.github.v3+json" \
+                                            -H "Authorization: token ${GITHUB_API_TOKEN}" \
+                                            "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                            -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
+                                    """
+                                } 
+                            }  
                         },
                         "Start docker job": {
                             docker_test()
