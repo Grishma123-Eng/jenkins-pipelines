@@ -241,6 +241,7 @@ def docker_test() {
                                 echo "The variables are equal for ARM"
                             else 
                                 echo "The variables are not equal for ARM"
+                            fi
                         '''
                         echo "Run succesfully for arm" 
                     } 
@@ -276,6 +277,7 @@ def docker_test() {
                                     echo "The variables are equal for AMD"
                                 else 
                                     echo "The variables are not equal for AMD"
+                                fi
                             ''' 
                             echo "Run succesfully for amd" 
                         }
@@ -311,6 +313,7 @@ def docker_test() {
                                 echo "The variables are equal for Multi ARM"
                             else 
                                 echo "The variables are not equal for Multi ARM"
+                            fi
                         '''
                         echo "Run succesfully for Multi docker image of arm" 
                     } 
@@ -345,6 +348,7 @@ def docker_test() {
                                     echo "The variables are equal for Multi AMD"
                                 else 
                                     echo "The variables are not equal for Multi AMD"
+                                fi
                             ''' 
                             echo "Run succesfully for Multi docker image of amd" 
                         }
