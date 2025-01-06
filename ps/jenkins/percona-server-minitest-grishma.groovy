@@ -235,14 +235,12 @@ def docker_test() {
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
                             docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
-                            fetched_docker_version=$(docker exec -it mysqlcontainer bash -c "mysql --version" | awk '{print$3}')
                             fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
                             echo "fetching docker version: \$fetched_docker_version"
-                            if (PS_RELEASE == fetched_docker_version) {
-                                println "The variables are equal"
-                            } else {
-                                println "The variables are not equal"
-                            }
+                            if (PS_RELEASE == fetched_docker_version); then 
+                                echo "The variables are equal for ARM"
+                            else 
+                                echo "The variables are not equal for ARM"
                         '''
                         echo "Run succesfully for arm" 
                     } 
@@ -271,6 +269,13 @@ def docker_test() {
                                 export PS_VERSION="${PS_RELEASE}"
                                 echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
                                 ./run.sh
+                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                                echo "fetching docker version: \$fetched_docker_version"
+                                if (PS_RELEASE == fetched_docker_version); then
+                                    echo "The variables are equal for AMD"
+                                else 
+                                    echo "The variables are not equal for AMD"
                             ''' 
                             echo "Run succesfully for amd" 
                         }
@@ -299,6 +304,13 @@ def docker_test() {
                             export PS_VERSION="${PS_RELEASE}.1-multi"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
+                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                            fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                            echo "fetching docker version: \$fetched_docker_version"
+                            if (PS_RELEASE == fetched_docker_version); then 
+                                echo "The variables are equal for Multi ARM"
+                            else 
+                                echo "The variables are not equal for Multi ARM"
                         '''
                         echo "Run succesfully for Multi docker image of arm" 
                     } 
@@ -326,6 +338,13 @@ def docker_test() {
                                 export PS_VERSION="${PS_RELEASE}.1-multi"
                                 echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
                                 ./run.sh
+                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                                echo "fetching docker version: \$fetched_docker_version"
+                                if (PS_RELEASE == fetched_docker_version); then 
+                                    echo "The variables are equal for Multi AMD"
+                                else 
+                                    echo "The variables are not equal for Multi AMD"
                             ''' 
                             echo "Run succesfully for Multi docker image of amd" 
                         }
