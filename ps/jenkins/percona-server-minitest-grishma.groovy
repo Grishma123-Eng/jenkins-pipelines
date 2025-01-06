@@ -234,6 +234,13 @@ def docker_test() {
                             export PS_VERSION="${PS_RELEASE}.1-aarch64"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
+                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}//percona-server:${PS_RELEASE}
+                            fetched_docker_version=$(docker exec -it mysqlcontainer bash -c "mysql --version" | awk '{print$3}')
+                            if (PS_RELEASE == fetched_docker_version) {
+                                println "The variables are equal"
+                            } else {
+                                println "The variables are not equal"
+                            }
                         '''
                         echo "Run succesfully for arm" 
                     } 
