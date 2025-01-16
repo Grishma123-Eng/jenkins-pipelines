@@ -248,18 +248,22 @@ def docker_test() {
                 }
             }
         stage('Run trivy analyzer ARM64') {
-                sh """
-                    sudo yum install -y curl wget git
-                    TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                    wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                    sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                    wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-aarch64
-                    echo "Ran succesfully for arm"
-                """
-            }
-        }
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh """
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-aarch64
+                            echo "Ran succesfully for arm"
+                        """
+                    }
+                }  
+            }        
+        }   
 
         stepsForParallel['Run for AMD'] = {
             stage("Docker image for AMD") {
@@ -296,18 +300,22 @@ def docker_test() {
                     }
                 }
             stage ('Run trivy analyzer for AMD') {
-                    sh """
-                    sudo yum install -y curl wget git
-                    TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                    wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                    sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                    wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}
-                    echo "ran succesfully for amd docker trivy"
-                    """
+                node ( 'docker' ) {
+                    script {
+                        sh """
+                        sudo yum install -y curl wget git
+                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}
+                        echo "ran succesfully for amd docker trivy"
+                        """        
+                    }   
+                }
             }   
-        }
+        }       
         stepsForParallel['Run for multi docker image ARM64'] = {
         stage("Multi-Docker image for ARM64") {
             node ( 'docker-32gb-aarch64' ) {   
@@ -344,6 +352,8 @@ def docker_test() {
                 }
             }
         stage ('Run trivy analyzer for multi docker arm') {
+            node ( 'docker-32gb-aarch64' ) {   
+                script{
                     sh """
                     sudo yum install -y curl wget git
                     TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
@@ -354,8 +364,10 @@ def docker_test() {
                     --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
                     echo "ran sucessfully for multi docker arm"
                     """
-            }   
-        }    
+                }  
+            } 
+        } 
+    }   
         stepsForParallel['Run for multi docker image AMD'] = {
             stage("Multi-Docker image for AMD") {
                 node ( 'docker' ) {
@@ -391,6 +403,8 @@ def docker_test() {
                     }
                 }
             stage ('Run trivy analyzer for multi docker amd') {
+                node ( 'docker' ) {
+                    script {
                         sh """
                         sudo yum install -y curl wget git
                         TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
@@ -401,8 +415,10 @@ def docker_test() {
                         --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
                         echo "ran successfully for multi docker amd"
                         """
+                    }
                 }   
-            }       
+            }  
+        }     
     parallel stepsForParallel
         
 }
