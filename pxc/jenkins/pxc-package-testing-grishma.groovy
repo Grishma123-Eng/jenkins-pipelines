@@ -320,7 +320,7 @@ void setInventories(String param_test_type){
                     }else if(("${params.node_to_test}" == "ol-8") || ("${params.node_to_test}" == "ol-9") || ("${params.node_to_test}" == "min-amazon-2") || ("${params.node_to_test}" == "rhel-8") || ("${params.node_to_test}" == "rhel-9") ("${params.node_to_test}" == "rhel-8-arm") || ("${params.node_to_test}" == "rhel-9-arm")){
                         SSH_USER="ec2-user"
                     }else if(("${params.node_to_test}" == "centos-7")){
-                        SSH_USER="ec2-user"
+                        SSH_USER="centos"
                     }else{
                         echo "OS Not yet in list of Keypath setup"
                     }
