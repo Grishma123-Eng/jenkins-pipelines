@@ -1,6 +1,6 @@
 library changelog: false, identifier: 'lib@pxc-pt-pro-support', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Grishma121-Eng/jenkins-pipelines.git'
+    remote: 'https://github.com/Grishma123-Eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -322,7 +322,7 @@ def setup(){
                 installMoleculeBookworm()
                     sh '''
                         rm -rf package-testing                    
-                        git clone https://github.com/Grishma121-Eng/package-testing --branch pxc-pt-pro-support
+                        git clone https://github.com/Grishma123-Eng/package-testing --branch pxc-pt-pro-support
                     '''
 }
 
