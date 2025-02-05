@@ -117,7 +117,7 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                 sh"""
                     . virtenv/bin/activate
                     export MOLECULE_DEBUG=1
-                    #export DESTROY_ENV=no
+                    export DESTROY_ENV=no
                     
                     mkdir -p ${WORKSPACE}/install
                     mkdir -p ${WORKSPACE}/min_upgrade
@@ -139,7 +139,7 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                 sh"""
                     . virtenv/bin/activate
                     export MOLECULE_DEBUG=1
-                    #export DESTROY_ENV=no
+                    export DESTROY_ENV=no
 
                     cd package-testing/molecule/pxc
 
