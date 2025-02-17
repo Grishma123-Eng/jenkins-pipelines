@@ -70,7 +70,9 @@ void prepareNode() {
     """
 
     if ("$PLATFORM_VER" == "latest") {
-        USED_PLATFORM_VER = sh(script: "eksctl version -ojson | jq -r '.EKSServerSupportedVersions | max'", , returnStdout: true).trim()
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AMI/OVF', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+            USED_PLATFORM_VER = sh(script: "aws eks describe-addon-versions --query 'addons[].addonVersions[].compatibilities[].clusterVersion' --output json | jq -r 'flatten | unique | sort | reverse | .[0]'", , returnStdout: true).trim()
+        }
     } else {
         USED_PLATFORM_VER="$PLATFORM_VER"
     }
@@ -213,18 +215,14 @@ nodeGroups:
     - name: ng-1
       minSize: 3
       maxSize: 5
+      desiredCapacity: 3
+      instanceType: "m5.xlarge"
       iam:
         attachPolicyARNs:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
         - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      instancesDistribution:
-        maxPrice: 0.15
-        instanceTypes: ["m5.xlarge", "m5.2xlarge"] # At least two instance types should be specified
-        onDemandBaseCapacity: 0
-        onDemandPercentageAboveBaseCapacity: 50
-        spotInstancePools: 2
       tags:
         'iit-billing-tag': 'jenkins-eks'
         'delete-cluster-after-hours': '10'
@@ -485,6 +483,16 @@ pipeline {
                 stage('cluster4') {
                     steps {
                         clusterRunner('cluster4')
+                    }
+                }
+                stage('cluster5') {
+                    steps {
+                        clusterRunner('cluster5')
+                    }
+                }
+                stage('cluster6') {
+                    steps {
+                        clusterRunner('cluster6')
                     }
                 }
             }
