@@ -128,7 +128,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-       // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     }
 
 }
@@ -178,20 +178,20 @@ def runPlaybook(def nodeName) {
             ${playbook_path}
         """
     } catch (Exception e) {
-      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
+        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
         mini_test_error="True"
     }
 }
 
 def minitestNodes = [   "min-bullseye-x64",
-                        "min-bookworm-x64" ]
-                        /*"min-centos-7-x64",
-                       // "min-ol-8-x64",
-                      //  "min-focal-x64",
+                        "min-bookworm-x64" 
+                        "min-centos-7-x64",
+                        "min-ol-8-x64",
+                        "min-focal-x64",
                         "min-amazon-2-x64",
                         "min-jammy-x64",
                         "min-noble-x64",
-                        "min-ol-9-x64"     ]*/
+                        "min-ol-9-x64"     ]
 
 
 def package_tests_ps80(def nodes) {
@@ -425,15 +425,6 @@ def docker_test() {
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-/*def product_to_test
-if (env.PS_VERSION_SHORT == 'PS80' || env.PS_VERSION_SHORT == 'PS84') {
-product_to_test = "${env.PS_VERSION_SHORT}"
-}
-else {
-product_to_test = 'client_test'  // Default value or handle other conditions
-}
-echo "Product to test: ${product_to_test}" */
-//def PS8_RELEASE_VERSION
 def install_repo = 'testing'
 //def node_to_test = 'min-jammy-x64'
 def action_to_test = 'install'
@@ -445,13 +436,6 @@ pipeline {
     agent {
         label 'docker'
     }
-    /* environment {
-       /* PS_REVISION = ""
-        PS_RELEASE = ""
-        PS_VERSION_SHORT_KEY = ""
-        PS_VERSION_SHORT = "" 
-        product_to_test = ""
-    } */
     
 
 parameters {
@@ -484,7 +468,7 @@ parameters {
             description: 'Repo component to push packages to',
             name: 'COMPONENT')
         choice(
-            choices: '#releases\n#releases-ci',
+            choices: '#dev-server-qa\n#releases-ci\n#releases',
             description: 'Channel for notifications',
             name: 'SLACKNOTIFY')
     }
@@ -536,7 +520,7 @@ parameters {
                label 'min-focal-x64'
             }
             steps {
-               // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
                 buildStage("none", "--get_sources=1")
@@ -562,16 +546,14 @@ parameters {
     }
     post {
         success {
-            script {
-                echo "Hello"
-               /* if (env.FIPSMODE == 'YES') {
+           /* script {
+                if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
-                } */
-            } 
-           // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
-            //unstash 'properties'
+                }
+            } */
+            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             unstash 'properties' 
             script {
                // currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
@@ -653,6 +635,7 @@ parameters {
                             docker_test()
                             echo "DOCKER images run successfully."
                         }
+                        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )
                     //echo "Start Minitests for PS"                
         }    
@@ -663,7 +646,7 @@ parameters {
             deleteDir() 
         }
         failure {
-          //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
+            slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
