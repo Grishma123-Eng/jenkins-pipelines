@@ -635,7 +635,7 @@ parameters {
                             docker_test()
                             echo "DOCKER images run successfully."
                         }
-                        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )
                     //echo "Start Minitests for PS"                
         }    
