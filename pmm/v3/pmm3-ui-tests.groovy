@@ -98,6 +98,7 @@ pipeline {
         PMM_QA_AURORA3_MYSQL_PASSWORD=credentials('PMM_QA_AURORA3_MYSQL_PASSWORD')
         PMM_QA_AWS_ACCESS_KEY_ID=credentials('PMM_QA_AWS_ACCESS_KEY_ID')
         PMM_QA_AWS_ACCESS_KEY=credentials('PMM_QA_AWS_ACCESS_KEY')
+        ZEPHYR_PMM_API_KEY=credentials('ZEPHYR_PMM_API_KEY')
     }
     parameters {
         string(
@@ -232,13 +233,13 @@ pipeline {
         }
         stage('Setup Clients for PMM-Server') {
             steps {
-                sh '''
-                  echo "started client setup"
-                '''
-                setupPMM3Client(SERVER_IP, CLIENT_VERSION.trim(), 'pmm', ENABLE_PULL_MODE, 'no', 'no', 'compose_setup', ADMIN_PASSWORD, 'no')
-                sh '''
-                  echo "installed local client"
-                '''
+//                 sh '''
+//                   echo "started client setup"
+//                 '''
+//                 setupPMM3Client(SERVER_IP, CLIENT_VERSION.trim(), 'pmm', ENABLE_PULL_MODE, 'no', 'no', 'compose_setup', ADMIN_PASSWORD, 'no')
+//                 sh '''
+//                   echo "installed local client"
+//                 '''
                 script {
                         env.PMM_REPO = params.CLIENT_VERSION == "pmm3-rc" ? "testing" : "experimental"
                 }
@@ -368,7 +369,7 @@ pipeline {
         failure {
             script {
                 archiveArtifacts artifacts: 'tests/output/*.png'
-                slackSend botUser: true, channel: '#pmm-ci', color: '#FF0000', message: "[${JOB_NAME}]: build ${currentBuild.result}, URL: ${BUILD_URL}"
+                slackSend botUser: true, channel: '#pmm-notifications', color: '#FF0000', message: "[${JOB_NAME}]: build ${currentBuild.result}, URL: ${BUILD_URL}"
             }
         }
     }
