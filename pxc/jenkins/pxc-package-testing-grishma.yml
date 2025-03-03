@@ -16,10 +16,10 @@
             - git:
                 url: https://github.com/Grishma123-Eng/jenkins-pipelines.git
                 branches:
-                    - 'add-support-pxc'
+                    - 'pxc-pt-pro-support'
                 wipe-workspace: true
         lightweight-checkout: true
-        script-path: pxc/jenkins/pxc-package-testing.groovy
+        script-path: pxc/jenkins/pxc-package-testing-grishma.groovy
     parameters:
         - choice:
             name: product_to_test
@@ -49,6 +49,8 @@
                 - 'rhel-9'
                 - 'rhel-8-arm'
                 - 'rhel-9-arm'
+                - 'amazon-linux-2023'
+                - 'amazon-linux-2023-arm'
             description: "Distribution to run test"
         - choice:
             name: test_repo
