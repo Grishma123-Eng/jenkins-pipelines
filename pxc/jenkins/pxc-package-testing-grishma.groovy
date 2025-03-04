@@ -1,4 +1,4 @@
-library changelog: false, identifier: 'lib@add-support-pxc', retriever: modernSCM([
+library changelog: false, identifier: 'lib@pxc-pt-pro-support', retriever: modernSCM([
     $class: 'GitSCMSource',
     remote: 'https://github.com/Grishma123-Eng/jenkins-pipelines.git'
 ]) _
