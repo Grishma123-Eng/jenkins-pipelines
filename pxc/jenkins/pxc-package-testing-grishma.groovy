@@ -1067,7 +1067,7 @@ pipeline {
     }
 
 
-    post {
+   /* post {
 
         aborted {
                 slackSend channel: '#dev-server-qa', color: '#B2BEB5', message: "[${env.JOB_NAME}]: Aborted during the Package testing (Build Failed) [${env.BUILD_URL}] Parameters: product_to_test: ${params.product_to_test} , node_to_test: ${params.node_to_test} , test_repo: ${params.test_repo}, test_type: ${params.test_type}"
@@ -1082,6 +1082,6 @@ pipeline {
         }
 
 
-    }
+    } */
 
 }
