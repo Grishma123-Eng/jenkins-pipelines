@@ -4,19 +4,40 @@ library changelog: false, identifier: 'lib@master', retriever: modernSCM([
 ]) _
 
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
-    sh """
-        set -o xtrace
-        mkdir -p test
-        wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${GIT_BRANCH}/build-ps/pxc_builder.sh -O pxc_builder.sh
-        pwd -P
-        ls -laR
-        export build_dir=\$(pwd -P)
-        docker run -u root -v \${build_dir}:\${build_dir} ${DOCKER_OS} sh -c "
-            set -o xtrace
-            cd \${build_dir}
-            bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --install_deps=1
-            bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${GIT_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} --bin_release=${BIN_RELEASE} ${STAGE_PARAM}"
-    """
+    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+      sh """
+          set -o xtrace
+          mkdir -p test
+          if [ \${FIPSMODE} = "YES" ]; then
+              PXC_VERSION_MINOR=\$(curl -s -O \$(echo \${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/\${GIT_BRANCH}/MYSQL_VERSION && cat MYSQL_VERSION | grep MYSQL_VERSION_MINOR | awk -F= '{print \$2}')
+              if [ \${PXC_VERSION_MINOR} = "0" ]; then
+                  PRO_BRANCH="8.0"
+              elif [ \${PXC_VERSION_MINOR} = "4" ]; then
+                  PRO_BRANCH="8.4"
+              else
+                  PRO_BRANCH="trunk"
+              fi
+              curl -L -H "Authorization: Bearer \${TOKEN}" \
+                      -H "Accept: application/vnd.github.v3.raw" \
+                      -o pxc_builder.sh \
+                      "https://api.github.com/repos/percona/percona-xtradb-cluster-private-build/contents/build-ps/pxc_builder.sh?ref=\${PRO_BRANCH}"
+          else
+              wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${GIT_BRANCH}/build-ps/pxc_builder.sh -O pxc_builder.sh
+          fi
+          pwd -P
+          ls -laR
+          export build_dir=\$(pwd -P)
+          docker run -u root -v \${build_dir}:\${build_dir} ${DOCKER_OS} sh -c "
+              set -o xtrace
+              cd \${build_dir}
+              bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --install_deps=1
+              if [ \${FIPSMODE} = "YES" ]; then
+                  git clone --depth 1 --branch \${PRO_BRANCH} https://x-access-token:${TOKEN}@github.com/percona/percona-xtradb-cluster-private-build.git percona-xtradb-cluster-private-build
+                  mv -f \${build_dir}/percona-xtradb-cluster-private-build/build-ps \${build_dir}/test/.
+              fi
+              bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${GIT_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} --bin_release=${BIN_RELEASE} ${STAGE_PARAM}"
+      """
+    }
 }
 
 void cleanUpWS() {
@@ -80,7 +101,13 @@ pipeline {
             steps {
                 slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${GIT_BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
-                buildStage("centos:7", "--get_sources=1")
+                script {
+                            if (env.FIPSMODE == 'YES') {
+                                buildStage("centos:7", "--get_sources=1 --enable_fipsmode=1")
+                            } else {
+                                buildStage("centos:7", "--get_sources=1")
+                            }
+                       }
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "DEST=UPLOAD" test/pxc-80.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -245,21 +272,48 @@ pipeline {
                         uploadRPMfromAWS("rpm/", AWS_STASH_PATH)
                     }
                 }
-/*                stage('Amazon Linux 2023') {
+                stage('Amazon Linux 2023') {
                     agent {
                         label 'docker-32gb'
                     }
                     steps {
-                        cleanUpWS()
-                        unstash 'pxc-80.properties'
-                        popArtifactFolder("srpm/", AWS_STASH_PATH)
-                        buildStage("amazonlinux:2023", "--build_rpm=1")
+                        script {
+                            if (env.FIPSMODE == 'NO') {
+                                echo "The step is skipped"
+                            } else {
+                                cleanUpWS()
+                                unstash 'pxc-80.properties'
+                                popArtifactFolder("srpm/", AWS_STASH_PATH)
+                                buildStage("amazonlinux:2023", "--build_rpm=1 --enable_fipsmode=1")
 
-                        stash includes: 'test/pxc-80.properties', name: 'pxc-80.properties'
-                        pushArtifactFolder("rpm/", AWS_STASH_PATH)
-                        uploadRPMfromAWS("rpm/", AWS_STASH_PATH)
+                                stash includes: 'test/pxc-80.properties', name: 'pxc-80.properties'
+                                pushArtifactFolder("rpm/", AWS_STASH_PATH)
+                                uploadRPMfromAWS("rpm/", AWS_STASH_PATH)
+                            }
+                        }
                     }
-                }*/
+                }
+                stage('Amazon Linux 2023 ARM') {
+                    agent {
+                        label 'docker-32gb-aarch64'
+                    }
+                    steps {
+                        script {
+                            if (env.FIPSMODE == 'NO') {
+                                echo "The step is skipped"
+                            } else {
+                                cleanUpWS()
+                                unstash 'pxc-80.properties'
+                                popArtifactFolder("srpm/", AWS_STASH_PATH)
+                                buildStage("amazonlinux:2023", "--build_rpm=1 --enable_fipsmode=1")
+
+                                stash includes: 'test/pxc-80.properties', name: 'pxc-80.properties'
+                                pushArtifactFolder("rpm/", AWS_STASH_PATH)
+                                uploadRPMfromAWS("rpm/", AWS_STASH_PATH)
+                            }
+                        }
+                    }
+                }
                 stage('Ubuntu Focal(20.04)') {
                     agent {
                         label 'docker-32gb'
