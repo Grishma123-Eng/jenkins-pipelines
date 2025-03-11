@@ -45,6 +45,8 @@
                 - 'ol-8'
                 - 'ol-9'
                 - 'rhel-8'
+                - 'amazon-linux-2023'
+                - 'amazon-linux-2023-arm'
                 - 'rhel-9'
                 - 'rhel-8-arm'
                 - 'rhel-9-arm'
