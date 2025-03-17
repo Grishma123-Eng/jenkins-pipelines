@@ -321,7 +321,7 @@ def setup(){
                 installMoleculeBookworm()
                     sh '''
                         rm -rf package-testing                    
-                        git clone https://github.com/Grishma123-Eng/package-testing --branch pxc-pt-pro-support
+                        git clone https://github.com/Grishma123-Eng/package-testing --branch pxc-final
                     '''
 }
 
