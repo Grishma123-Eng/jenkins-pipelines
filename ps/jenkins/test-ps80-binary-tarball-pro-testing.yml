@@ -1,0 +1,14 @@
+- job:
+    name: test-ps80-binary-tarball-pro-testing
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/Grishma123-Eng/jenkins-pipelines.git
+            branches:
+            - 'amazon-linux-support'
+            wipe-workspace: true
+      lightweight-checkout: true
+      script-path: ps/jenkins/test-ps80-binary-tarball-pro-testing.groovy
