@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@master', retriever: modernSCM([
+library changelog: false, identifier: 'lib@add-minitest-support-1', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/Grishma123-Eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -148,17 +148,31 @@ def installDependencies(def nodeName) {
         } else {
             echo "Unexpected node name: ${nodeName}"
         }
-    } catch (Exception e) {
+    } /*catch (Exception e) {
         slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
-    }
+    } */
 
 }
 
 def runPlaybook(def nodeName) {
 
     try {
-        def playbook = "ps_lts_innovation.yml"
+
+        script {
+            env.PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
+            echo "PS_RELEASE : ${env.PS_RELEASE}"
+            env.PS_VERSION_SHORT_KEY=  sh(script: """echo ${PS_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
+            echo "Version is for : ${env.PS_VERSION_SHORT_KEY}"
+            env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
+            echo "Value is : ${env.PS_VERSION_SHORT}"
+        } 
+        echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
+        def playbook = "ps_80.yml"
+        def playbook_path //= "package-testing/playbooks/${playbook}"
+        def client_to_test
+     //   def playbook = "ps_lts_innovation.yml"
         def playbook_path = "package-testing/playbooks/${playbook}"
+
 
         sh '''
             set -xe
@@ -177,7 +191,7 @@ def runPlaybook(def nodeName) {
             ${playbook_path}
         """
     } catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
+       // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
         mini_test_error="True"
     }
 }
@@ -207,15 +221,226 @@ def package_tests_ps80(def nodes) {
     }
     parallel stepsForParallel
 }
+def docker_test() {
+    def stepsForParallel = [:] 
+        stepsForParallel['Run for ARM64'] = {
+        stage("Docker image for ARM64") {
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh '''
+                            echo "running test for ARM"
+                            export DOCKER_PLATFORM=linux/arm64
+                            # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps-arm
+                            pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}.arm64"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            ./run.sh
+                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                            fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                            echo "fetching docker version: \$fetched_docker_version"
+                            if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
+                                echo "The versions are equal for ARM"
+                            else 
+                                echo "The versions are not equal for ARM"
+                            fi
+                        '''
+                        echo "Run succesfully for arm" 
+                    } 
+                }
+            }
+        stage('Run trivy analyzer ARM64') {
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh """
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-aarch64
+                            echo "Ran succesfully for arm"
+                        """
+                    }
+                }  
+            }        
+        }   
+
+        stepsForParallel['Run for AMD'] = {
+            stage("Docker image for AMD") {
+                node ( 'docker' ) {
+                        script {
+                            sh '''
+                                echo "running the test for AMD" 
+                                # disable THP on the host for TokuDB
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                                chmod +x disable_thp.sh
+                                sudo ./disable_thp.sh
+                                # run test
+                                export PATH=${PATH}:~/.local/bin
+                                sudo yum install -y python3 python3-pip
+                                rm -rf package-testing
+                                git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                                cd package-testing/docker-image-tests/ps
+                                pip3 install --user -r requirements.txt
+                                export PS_VERSION="${PS_RELEASE}-amd64"
+                                echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
+                                ./run.sh
+                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                                echo "fetching docker version: \$fetched_docker_version"
+                                if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
+                                    echo "The versions are equal for AMD"
+                                else 
+                                    echo "The versions are not equal for AMD"
+                                fi
+                            ''' 
+                            echo "Run succesfully for amd" 
+                        }
+                    }
+                }
+            stage ('Run trivy analyzer for AMD') {
+                node ( 'docker' ) {
+                    script {
+                        sh """
+                        sudo yum install -y curl wget git
+                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}
+                        echo "ran succesfully for amd docker trivy"
+                        """        
+                    }   
+                }
+            }   
+        }       
+        stepsForParallel['Run for multi docker image ARM64'] = {
+        stage("Multi-Docker image for ARM64") {
+            node ( 'docker-32gb-aarch64' ) {   
+                    script{
+                        sh '''
+                            echo "running test for ARM"
+                            export DOCKER_PLATFORM=linux/arm64
+                            # disable THP on the host for TokuDB
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                            chmod +x disable_thp.sh
+                            sudo ./disable_thp.sh
+                            # run test
+                            export PATH=${PATH}:~/.local/bin
+                            sudo yum install -y python3 python3-pip
+                            rm -rf package-testing
+                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                            cd package-testing/docker-image-tests/ps-arm
+                            pip3 install --user -r requirements.txt
+                            export PS_VERSION="${PS_RELEASE}.1-multi"
+                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
+                            ./run.sh
+                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                            fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                            echo "fetching docker version: \$fetched_docker_version"
+                            if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
+                                echo "The versions are equal for Multi ARM"
+                            else 
+                                echo "The versions are not equal for Multi ARM"
+                            fi
+                        '''
+                        echo "Run succesfully for Multi docker image of arm" 
+                    } 
+                }
+            }
+        stage ('Run trivy analyzer for multi docker arm') {
+            node ( 'docker-32gb-aarch64' ) {   
+                script{
+                    sh """
+                    sudo yum install -y curl wget git
+                    TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                    wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
+                    sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
+                    wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
+                    echo "ran sucessfully for multi docker arm"
+                    """
+                }  
+            } 
+        } 
+    }   
+        stepsForParallel['Run for multi docker image AMD'] = {
+            stage("Multi-Docker image for AMD") {
+                node ( 'docker' ) {
+                        script {
+                            sh '''
+                                echo "running the test for AMD" 
+                                # disable THP on the host for TokuDB
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
+                                echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
+                                chmod +x disable_thp.sh
+                                sudo ./disable_thp.sh
+                                # run test
+                                export PATH=${PATH}:~/.local/bin
+                                sudo yum install -y python3 python3-pip
+                                rm -rf package-testing
+                                git clone https://github.com/Percona-QA/package-testing.git --depth 1
+                                cd package-testing/docker-image-tests/ps
+                                pip3 install --user -r requirements.txt
+                                export PS_VERSION="${PS_RELEASE}.1-multi"
+                                echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
+                                ./run.sh
+                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                                echo "fetching docker version: \$fetched_docker_version"
+                                if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
+                                    echo "The versions are equal for Multi AMD"
+                                else 
+                                    echo "The versions are not equal for Multi AMD"
+                                fi
+                            ''' 
+                            echo "Run succesfully for Multi docker image of amd" 
+                        }
+                    }
+                }
+            stage ('Run trivy analyzer for multi docker amd') {
+                node ( 'docker' ) {
+                    script {
+                        sh """
+                        sudo yum install -y curl wget git
+                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
+                        echo "ran successfully for multi docker amd"
+                        """
+                    }
+                }   
+            }  
+        }     
+    parallel stepsForParallel
+}
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-def PS8_RELEASE_VERSION
-def product_to_test = 'innovation-lts'
+def product_to_test = 'ps80'
 def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
 def install_mysql_shell = 'no'
+
 
 pipeline {
     agent {
@@ -262,13 +487,34 @@ parameters {
         timestamps ()
     }
     stages {
+        stage('Preparation') {
+            steps {
+                script {
+                    env.DOCKER_ACC= 'perconalab'
+                    env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
+                    echo "PS_RELEASE: ${env.PS_RELEASE}"
+                    env.PS_VERSION_SHORT_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
+                    echo "PS_VERSION_SHORT_KEY: ${env.PS_VERSION_SHORT_KEY}"
+                    env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
+                    echo "PS_VERSION_SHORT: ${env.PS_VERSION_SHORT}"
+                    echo "Product to test is: ${env.product_to_test}"
+                    }
+                }
+            }
+        stage('Run Playbook') {
+            steps {
+                script {
+                    echo "Product to test in playbook: ${product_to_test}"
+                }
+            }
+        }
 
         stage('Create PS source tarball') {
             agent {
                label 'min-focal-x64'
             }
             steps {
-                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+            //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
                 script {
@@ -296,7 +542,7 @@ parameters {
                 uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
-        stage('Build PS generic source packages') {
+      /*  stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -1026,10 +1272,7 @@ parameters {
                             sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
                             git clone https://github.com/percona/percona-docker
                             cd percona-docker/percona-server-8.0
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile
@@ -1038,9 +1281,7 @@ parameters {
                                 fi
                                 sed -i "s/percona-release enable mysql-shell/PS_REPO=\"testing\";percona-release enable mysql-shell/g" Dockerfile
                             fi
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile.aarch64
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile.aarch64
@@ -1052,8 +1293,7 @@ parameters {
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 --platform="linux/amd64" .
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 --platform="linux/arm64" -f Dockerfile.aarch64 .
                             cd ../mysql-router
-                            sed -i "s/ENV ROUTE_VERSION.*/ENV ROUTE_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80 testing/percona-release enable ps-84-lts testing/g" Dockerfile
@@ -1121,27 +1361,40 @@ parameters {
                     }
                 }
             }
-       }
+       } */
     }
     post {
         success {
-            script {
+          /*  script {
                 if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
-            }
-            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
+            } 
+            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]") */
             unstash 'properties'
             script {
                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
-                REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
-                PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
-                PS8_RELEASE_VERSION = sh(returnStdout: true, script: """ echo ${BRANCH} | sed -nE '/release-(8\\.[0-9]{1})\\..*/s//\\1/p' """).trim()
+                env.PS_REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+                sh "cat test/percona-server-8.0.properties"
+                echo "Revision is: ${env.PS_REVISION}"
+                echo "PS_RELEASE is: ${PS_RELEASE}"
+                echo "PS_VERSION_SHORT_KEY is: ${PS_VERSION_SHORT_KEY}"
+                echo "Value is : ${PS_VERSION_SHORT}"
+                echo "DOCKER account is : ${DOCKER_ACC}"
 
-                if("${PS8_RELEASE_VERSION}"){
-                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS8_RELEASE_VERSION}"
+                if (env.product_to_test == 'PS80') {
+                    echo "Running PS80-specific steps"
+                } else if (env.product_to_test == 'PS84') {
+                    echo "Running PS84-specific steps"
+                } else {
+                    echo "Running client test"
+                }
+
+
+                if("${PS_VERSION_SHORT}"){
+                    echo "Executing MINITESTS as VALID VALUES FOR PS_VERSION_SHORT:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
@@ -1150,17 +1403,19 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        echo "${PS8_RELEASE_VERSION} is the VALUE!!@!"
-                        export RELEASE_VER_VAL="${PS8_RELEASE_VERSION}"
-                        if [[ "\$RELEASE_VER_VAL" =~ ^8.[0-9]{1}\$ ]]; then
+                        echo "${PS_VERSION_SHORT} is the VALUE!!@!"
+                        export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
+                        if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
                             echo "\$RELEASE_VER_VAL is a valid version"
-                            OLD_REV=\$(cat VERSIONS | grep PS_INN_LTS_REV | cut -d '=' -f2- )
-                            OLD_VER=\$(cat VERSIONS | grep PS_INN_LTS_VER | cut -d '=' -f2- )
-                            sed -i s/PS_INN_LTS_REV=\$OLD_REV/PS_INN_LTS_REV='"'${REVISION}'"'/g VERSIONS
+                            OLD_REV=\$(cat VERSIONS | grep ${PS_VERSION_SHORT}_REV | cut -d '=' -f2- )
+                            echo "OLD_REV is : \${OLD_REV}"
+                            OLD_VER=\$(cat VERSIONS | grep ${PS_VERSION_SHORT}_VER | cut -d '=' -f2- )
+                            echo "OLD_VER is : \${OLD_VER}"
+                            sed -i s/PS_INN_LTS_REV=\$OLD_REV/PS_INN_LTS_REV='"'${PS_REVISION}'"'/g VERSIONS
                             sed -i s/PS_INN_LTS_VER=\$OLD_VER/PS_INN_LTS_VER='"'${PS_RELEASE}'"'/g VERSIONS
 
                         else
-                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${PS8_RELEASE_VERSION}"
+                            echo "INVALID PS_VERSION_SHORT VALUE: ${PS_VERSION_SHORT}"
                         fi
                         git diff
                         if [[ -z \$(git diff) ]]; then
@@ -1168,58 +1423,64 @@ parameters {
                         else
                             echo "There are changes"
                             git add -A
-                        git commit -m "Autocommit: add ${REVISION} and ${PS_RELEASE} for ${PS8_RELEASE_VERSION} package testing VERSIONS file."
+                        git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
                             git push
                         fi
                     """
                     }
-                    echo "Start Minitests for PS"                
-                    package_tests_ps80(minitestNodes)
-                    if("${mini_test_error}" == "True"){
-                        error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
-                    }else{
-                        echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                        build job: 'package-testing-ps-innovation-lts', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'node_to_test', value: "all"),string(name: 'action_to_test', value: "all"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
-                                                                                                                                            
-                        echo "Trigger PMM_PS Github Actions Workflow"
-                        
-                        withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
-                            sh """
-                                curl -i -v -X POST \
-                                    -H "Accept: application/vnd.github.v3+json" \
-                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \
-                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                    -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
-                            """
+                    parallel(
+                        "Start Minitests for PS": {
+                            package_tests_ps80(minitestNodes)
+                            if("${mini_test_error}" == "True"){
+                                error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
+                            }else {
+                                echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
+                                build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                                echo "Trigger PMM_PS Github Actions Workflow"
+                                withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
+                                    sh """
+                                        curl -i -v -X POST \
+                                            -H "Accept: application/vnd.github.v3+json" \
+                                            -H "Authorization: token ${GITHUB_API_TOKEN}" \
+                                            "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                            -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
+                                    """
+                                } 
+                            }  
+                        },
+                        "Start docker job": {
+                            docker_test()
+                            echo "DOCKER images run successfully."
                         }
-
-                    }
-                }
+                      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                    )
+                    //echo "Start Minitests for PS"                
+        }    
                 else{
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                 //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
                 }
             }
             deleteDir()
         }
-        failure {
+      /*  failure {
             slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
             deleteDir()
-        }
+        } */
         always {
             sh '''
                 sudo rm -rf ./*
             '''
-            script {
+       /*     script {
                 if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 }
-            }
+            } */
             deleteDir()
         }
     }
