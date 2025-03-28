@@ -168,7 +168,7 @@ def runPlaybook(def nodeName) {
         } 
         echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
         def playbook = "ps_80.yml"
-        def playbook_path //= "package-testing/playbooks/${playbook}"
+      //  def playbook_path //= "package-testing/playbooks/${playbook}"
         def client_to_test
      //   def playbook = "ps_lts_innovation.yml"
         def playbook_path = "package-testing/playbooks/${playbook}"
