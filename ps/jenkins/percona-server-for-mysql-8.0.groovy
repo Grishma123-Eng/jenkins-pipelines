@@ -517,13 +517,14 @@ parameters {
             //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
-                script {
+                buildStage("none", "--get_sources=1")
+              /*  script {
                             if (env.FIPSMODE == 'YES') {
                                 buildStage("none", "--get_sources=1 --enable_fipsmode=1")
                             } else {
                                 buildStage("none", "--get_sources=1")
                             }
-                       }
+                       }*/
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "UPLOAD" test/percona-server-8.0.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -534,12 +535,13 @@ parameters {
                    cat awsUploadPath
                 '''
                 script {
-                    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                    echo "Helloooo"
+                //    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-                pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
+               // pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
+              //  uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
       /*  stage('Build PS generic source packages') {
