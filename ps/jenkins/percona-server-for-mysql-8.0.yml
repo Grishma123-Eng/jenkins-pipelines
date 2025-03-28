@@ -8,7 +8,7 @@
         - git:
             url: https://github.com/Grishma123-Eng/jenkins-pipelines.git
             branches:
-            - 'master'
+            - 'add-minitest-support-1'
             wipe-workspace: false
       lightweight-checkout: true
       script-path: ps/jenkins/percona-server-for-mysql-8.0.groovy
