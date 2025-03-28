@@ -148,9 +148,9 @@ def installDependencies(def nodeName) {
         } else {
             echo "Unexpected node name: ${nodeName}"
         }
-    } /*catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
-    } */
+    } catch (Exception e) {
+      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+    } 
 
 }
 
