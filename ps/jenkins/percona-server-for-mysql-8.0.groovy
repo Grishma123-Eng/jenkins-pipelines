@@ -242,7 +242,7 @@ def docker_test() {
                             git clone https://github.com/Percona-QA/package-testing.git --depth 1
                             cd package-testing/docker-image-tests/ps-arm
                             pip3 install --user -r requirements.txt
-                            export PS_VERSION="${PS_RELEASE}.arm64"
+                            export PS_VERSION="${PS_RELEASE}-arm64"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
                             docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
@@ -326,110 +326,7 @@ def docker_test() {
                     }   
                 }
             }   
-        }       
-        stepsForParallel['Run for multi docker image ARM64'] = {
-        stage("Multi-Docker image for ARM64") {
-            node ( 'docker-32gb-aarch64' ) {   
-                    script{
-                        sh '''
-                            echo "running test for ARM"
-                            export DOCKER_PLATFORM=linux/arm64
-                            # disable THP on the host for TokuDB
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
-                            echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
-                            chmod +x disable_thp.sh
-                            sudo ./disable_thp.sh
-                            # run test
-                            export PATH=${PATH}:~/.local/bin
-                            sudo yum install -y python3 python3-pip
-                            rm -rf package-testing
-                            git clone https://github.com/Percona-QA/package-testing.git --depth 1
-                            cd package-testing/docker-image-tests/ps-arm
-                            pip3 install --user -r requirements.txt
-                            export PS_VERSION="${PS_RELEASE}.1-multi"
-                            echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
-                            ./run.sh
-                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
-                            fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
-                            echo "fetching docker version: \$fetched_docker_version"
-                            if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
-                                echo "The versions are equal for Multi ARM"
-                            else 
-                                echo "The versions are not equal for Multi ARM"
-                            fi
-                        '''
-                        echo "Run succesfully for Multi docker image of arm" 
-                    } 
-                }
-            }
-        stage ('Run trivy analyzer for multi docker arm') {
-            node ( 'docker-32gb-aarch64' ) {   
-                script{
-                    sh """
-                    sudo yum install -y curl wget git
-                    TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                    wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
-                    sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
-                    wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
-                    echo "ran sucessfully for multi docker arm"
-                    """
-                }  
-            } 
-        } 
-    }   
-        stepsForParallel['Run for multi docker image AMD'] = {
-            stage("Multi-Docker image for AMD") {
-                node ( 'docker' ) {
-                        script {
-                            sh '''
-                                echo "running the test for AMD" 
-                                # disable THP on the host for TokuDB
-                                echo "echo never > /sys/kernel/mm/transparent_hugepage/enabled" > disable_thp.sh
-                                echo "echo never > /sys/kernel/mm/transparent_hugepage/defrag" >> disable_thp.sh
-                                chmod +x disable_thp.sh
-                                sudo ./disable_thp.sh
-                                # run test
-                                export PATH=${PATH}:~/.local/bin
-                                sudo yum install -y python3 python3-pip
-                                rm -rf package-testing
-                                git clone https://github.com/Percona-QA/package-testing.git --depth 1
-                                cd package-testing/docker-image-tests/ps
-                                pip3 install --user -r requirements.txt
-                                export PS_VERSION="${PS_RELEASE}.1-multi"
-                                echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
-                                ./run.sh
-                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
-                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
-                                echo "fetching docker version: \$fetched_docker_version"
-                                if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
-                                    echo "The versions are equal for Multi AMD"
-                                else 
-                                    echo "The versions are not equal for Multi AMD"
-                                fi
-                            ''' 
-                            echo "Run succesfully for Multi docker image of amd" 
-                        }
-                    }
-                }
-            stage ('Run trivy analyzer for multi docker amd') {
-                node ( 'docker' ) {
-                    script {
-                        sh """
-                        sudo yum install -y curl wget git
-                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-multi
-                        echo "ran successfully for multi docker amd"
-                        """
-                    }
-                }   
-            }  
-        }     
+        }            
     parallel stepsForParallel
 }
 
