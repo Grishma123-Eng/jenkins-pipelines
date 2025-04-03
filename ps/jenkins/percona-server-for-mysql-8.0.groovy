@@ -194,7 +194,7 @@ def runPlaybook(def nodeName) {
     } catch (Exception e) {
        // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
         mini_test_error="True"
-        echo "issue during test"
+        echo "issue during test for: ${nodeName}"
     }
 }
 
@@ -396,7 +396,7 @@ parameters {
                     echo "PS_VERSION_SHORT_KEY: ${env.PS_VERSION_SHORT_KEY}"
                     env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
                     echo "PS_VERSION_SHORT: ${env.PS_VERSION_SHORT}"
-                    echo "Product to test is: ${env.product_to_test}"
+                    echo "Product to test is: ${product_to_test}"
                     }
                 }
             }
@@ -1337,7 +1337,7 @@ parameters {
                                 error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
                             }else {
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                                build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${env.product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                                build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
                                 withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
                                     sh """
