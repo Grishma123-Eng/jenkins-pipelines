@@ -1292,10 +1292,8 @@ parameters {
                 } else {
                     echo "Running client test"
                 }
-
-
-                if("${PS_VERSION_SHORT}"){
-                    echo "Executing MINITESTS as VALID VALUES FOR PS_VERSION_SHORT:${PS_VERSION_SHORT}"
+                 if("${PS_VERSION_SHORT}"){
+                    echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
@@ -1304,7 +1302,7 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout testing-branch
+                        git checkout testing-branch 
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
@@ -1313,11 +1311,12 @@ parameters {
                             echo "OLD_REV is : \${OLD_REV}"
                             OLD_VER=\$(cat VERSIONS | grep ${PS_VERSION_SHORT}_VER | cut -d '=' -f2- )
                             echo "OLD_VER is : \${OLD_VER}"
-                            sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/PS_INN_LTS_REV='"'${PS_REVISION}'"'/g VERSIONS
-                            sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/PS_INN_LTS_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${PS_REVISION}'"'/g VERSIONS
+                            sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/${PS_VERSION_SHORT}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                            echo 
 
                         else
-                            echo "INVALID PS_VERSION_SHORT VALUE: ${PS_VERSION_SHORT}"
+                            echo "INVALID PS8_RELEASE_VERSION VALUE: ${PS_VERSION_SHORT}"
                         fi
                         git diff
                         if [[ -z \$(git diff) ]]; then
@@ -1340,13 +1339,15 @@ parameters {
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
                                 withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
-                                    sh """
-                                        curl -i -v -X POST \
-                                            -H "Accept: application/vnd.github.v3+json" \
-                                            -H "Authorization: token ${GITHUB_API_TOKEN}" \
-                                            "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                            -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
-                                    """
+                                    withEnv(["TOKEN=${GITHUB_API_TOKEN}"]) {
+                                        sh """
+                                            curl -i -v -X POST \
+                                                -H "Accept: application/vnd.github.v3+json" \
+                                                -H "Authorization: token ${TOKEN}" \
+                                                "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                                -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
+                                        """
+                                    }
                                 } 
                             }  
                         },
