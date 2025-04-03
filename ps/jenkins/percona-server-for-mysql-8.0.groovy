@@ -193,6 +193,7 @@ def runPlaybook(def nodeName) {
     } catch (Exception e) {
        // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
         mini_test_error="True"
+        echo "issue during test"
     }
 }
 
