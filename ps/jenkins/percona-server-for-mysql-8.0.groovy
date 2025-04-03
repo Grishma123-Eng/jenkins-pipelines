@@ -334,7 +334,7 @@ def docker_test() {
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-def product_to_test = 'ps80'
+def product_to_test = 'ps_80'
 def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
