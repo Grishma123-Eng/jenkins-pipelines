@@ -1339,8 +1339,8 @@ parameters {
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
-                                withCredentials([string(credentialsId: 'JNKPERCONA_PS80_TOKEN', variable: 'JNKPERCONA_PS80_TOKEN')]) {
-                                    withEnv(["TOKEN=${JNKPERCONA_PS80_TOKEN}"]) {
+                                withCredentials([string(credentialsId: 'JNKPERCONA_TOKEN', variable: 'JNKPERCONA_TOKEN')]) {
+                                    withEnv(["TOKEN=${JNKPERCONA_TOKEN}"]) {
                                         sh """
                                             curl -i -v -X POST \
                                                 -H "Accept: application/vnd.github.v3+json" \
