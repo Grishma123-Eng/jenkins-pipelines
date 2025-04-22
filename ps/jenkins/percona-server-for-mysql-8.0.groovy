@@ -1296,7 +1296,7 @@ parameters {
                  if("${PS_VERSION_SHORT}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
-                    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+                    withCredentials([string(credentialsId: 'JNKPercona', variable: 'TOKEN')]) {
                     sh """
                         set -x
                         git clone https://jenkins-pxc-cd:$TOKEN@github.com/Percona-QA/package-testing.git
@@ -1340,32 +1340,30 @@ parameters {
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
                                 withCredentials([string(credentialsId: 'JNKPercona', variable: 'JNKPercona')]) {
-                                    withEnv(["TOKEN=${JNKPercona}"]) {
                                         sh """
                                             curl -i -v -X POST \
                                                 -H "Accept: application/vnd.github.v3+json" \
-                                                -H "Authorization: token ${TOKEN}" \
+                                                -H "Authorization: token ${JNKPercona}" \
                                                 "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
                                                 -d '{"ref":"main","inputs":{"PS_VERSION_SHORT":"${PS_RELEASE}"}}'
-                                        """
-                                    }
-                                } 
-                            }  
-                        },
-                        "Start docker job": {
-                            docker_test()
-                            echo "DOCKER images run successfully."
-                        }
+                                        """                         
+                                    } 
+                                }  
+                            },
+                            "Start docker job": {
+                                docker_test()
+                                echo "DOCKER images run successfully."
+                            }
                       //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )
                     //echo "Start Minitests for PS"                
-        }    
-                else{
-                    error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                 //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
-                }
-            }
-            deleteDir()
+                }    
+                        else{
+                            error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
+                        //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                        }
+                    }
+                        deleteDir()
         }
       /*  failure {
             slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
