@@ -1296,7 +1296,7 @@ parameters {
                  if("${PS_VERSION_SHORT}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
-                    withCredentials([string(credentialsId: 'JNKPercona', variable: 'TOKEN')]) {
+                    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
                         set -x
                         git clone https://jenkins-pxc-cd:$TOKEN@github.com/Percona-QA/package-testing.git
