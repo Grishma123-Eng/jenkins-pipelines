@@ -35,6 +35,11 @@ pipeline {
         name: 'PRO'
     )
     string(
+      name: 'WSREP_VERSION', 
+      defaultValue: '26.1.4.3', 
+      description: 'WSREP version')
+    
+    string(
       defaultValue: 'master',
       description: 'Branch for package-testing repository',
       name: 'TESTING_BRANCH'
