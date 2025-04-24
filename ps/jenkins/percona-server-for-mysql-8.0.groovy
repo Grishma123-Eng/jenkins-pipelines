@@ -1345,7 +1345,7 @@ parameters {
                                                 -H "Accept: application/vnd.github.v3+json" \
                                                 -H "Authorization: token ${Github_Integration}" \
                                                 "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                                -d '{"ref":"main","inputs":{"PS_VERSION":"${PS_RELEASE}"}}'
+                                                -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                                         """                         
                                     } 
                                 }  
