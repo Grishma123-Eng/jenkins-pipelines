@@ -1332,27 +1332,39 @@ parameters {
                     }
                     parallel(
                         "Start Minitests for PS": {
-                            package_tests_ps80(minitestNodes)
-                            if("${mini_test_error}" == "True"){
-                                error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
-                            }else {
-                                echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                                build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
-                                echo "Trigger PMM_PS Github Actions Workflow"
-                                withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
-                                        sh """
-                                            curl -i -v -X POST \
-                                                -H "Accept: application/vnd.github.v3+json" \
-                                                -H "Authorization: token ${Github_Integration}" \
-                                                "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                                -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
-                                        """                         
-                                    } 
-                                }  
-                            },
-                            "Start docker job": {
+                             try {
+                                package_tests_ps80(minitestNodes)
+                                if("${mini_test_error}" == "True"){
+                                    error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
+                                }else {
+                                    echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
+                                    build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                                    echo "Trigger PMM_PS Github Actions Workflow"
+                                    withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
+                                            sh """
+                                                curl -i -v -X POST \
+                                                    -H "Accept: application/vnd.github.v3+json" \
+                                                    -H "Authorization: token ${Github_Integration}" \
+                                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                                    -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
+                                            """                         
+                                        } 
+                                    }  
+                            } catch (err) {
+                                    echo " Minitests block failed: ${err}"
+                                    currentBuild.result = 'FAILURE'
+                                    throw err
+                                }
+                        },
+                        "Start docker job": {
+                            try {
                                 docker_test()
                                 echo "DOCKER images run successfully."
+                            }   catch (err) {
+                                echo "Docker test block failed: ${err}"
+                                currentBuild.result = 'FAILURE'
+                                throw err
+                            }
                             }
                       //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )
