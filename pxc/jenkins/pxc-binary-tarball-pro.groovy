@@ -1,0 +1,97 @@
+library changelog: false, identifier: "lib@add-support-pxc", retriever: modernSCM([
+    $class: 'GitSCMSource',
+    remote: 'https://github.com/Grishma123-Eng/jenkins-pipelines.git'
+])
+
+
+
+def operatingsystems() {
+    return ['oracle-9','debian-12','ubuntu-jammy', 'ubuntu-noble', 'al-2023']
+}
+
+
+pipeline {
+  agent {
+    label 'min-bookworm-x64'
+  }
+  environment {
+    PATH = '/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin';
+    MOLECULE_DIR = "molecule/pxc-binary-tarball-pro/";
+    PRO = "${params.PRO}"
+  }
+  parameters {
+    string(
+      name: 'PXC_VERSION', 
+      defaultValue: '8.0.36-28', 
+      description: 'PXC full version'
+    )
+    string(
+      name: 'PXC_REVISION', 
+      defaultValue: '47601f19', 
+      description: 'PXC revision'
+    )
+    booleanParam(
+        defaultValue: false, 
+        name: 'PRO'
+    )
+    string(
+      name: 'WSREP_VERSION',
+      defaultValue: '26.1.4.3', 
+      description: 'WSREP version'
+      )
+    string(
+      defaultValue: 'master',
+      description: 'Branch for package-testing repository',
+      name: 'TESTING_BRANCH'
+    )
+    string(
+      defaultValue: 'Percona-QA',
+      description: 'Git account for package-testing repository',
+      name: 'TESTING_GIT_ACCOUNT'
+    )
+  }
+  options {
+    withCredentials(moleculepxcJenkinsCreds())
+    disableConcurrentBuilds()
+  }
+  stages {
+    stage('Set build name'){
+      steps {
+        script {
+          currentBuild.displayName = "${env.BUILD_NUMBER}-${env.PXC_VERSION}-${env.PRO}"
+          currentBuild.description = "${env.PXC_REVISION}-${env.TESTING_BRANCH}-${env.TESTING_GIT_ACCOUNT}"
+        }
+      }
+    }
+    stage('Checkout') {
+      steps {
+        deleteDir()
+        git poll: false, branch: TESTING_BRANCH, url: "https://github.com/${TESTING_GIT_ACCOUNT}/package-testing.git"
+      }
+    }
+    stage ('Prepare') {
+      steps {
+        script {
+          installMoleculeBookwormPXBPRO()
+        }
+      }
+    }
+
+    stage('Run tarball molecule') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+          script {
+            moleculeParallelTest(operatingsystems(), env.MOLECULE_DIR)
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        moleculeParallelPostDestroy(operatingsystems(), env.MOLECULE_DIR)
+      }
+    }
+  }
+}
