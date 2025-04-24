@@ -16,7 +16,7 @@ pipeline {
   }
   environment {
     PATH = '/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin';
-    MOLECULE_DIR = "molecule/pxc-binary-tarball-pro/";
+    moleculeDir = "molecule/pxc-binary-tarball-pro/";
     PRO = "${params.PRO}"
   }
   parameters {
