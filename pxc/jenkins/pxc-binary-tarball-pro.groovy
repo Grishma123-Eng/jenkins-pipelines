@@ -18,6 +18,7 @@ pipeline {
     PATH = '/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin';
     MOLECULE_DIR = "molecule/test-pxc-binary-tarball-pro/";
     PRO = "${params.PRO}"
+    PXC_VERSION = "${params.PXC_VERSION}"
   }
   parameters {
     string(
