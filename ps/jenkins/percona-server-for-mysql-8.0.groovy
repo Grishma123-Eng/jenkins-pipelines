@@ -320,7 +320,7 @@ def docker_test() {
                             sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
                             /usr/local/bin/trivy image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}-amd || true
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}-amd64 || true
                             echo "ran succesfully for amd docker trivy"
                         """        
                     }   
@@ -387,7 +387,7 @@ parameters {
         stage('Preparation') {
             steps {
                 script {
-                    env.DOCKER_ACC= 'perconalab'
+                    env.DOCKER_ACC= 'percona'
                     env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
                     echo "PS_RELEASE: ${env.PS_RELEASE}"
                     env.PS_VERSION_SHORT_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
