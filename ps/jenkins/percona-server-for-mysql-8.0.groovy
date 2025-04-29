@@ -264,14 +264,14 @@ def docker_test() {
                 stage('Run trivy analyzer ARM64') {
                     script{
                         sh """
-                        sudo yum install -y curl wget git
-                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
-                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-ARM64.tar.gz
-                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-ARM64.tar.gz -C /usr/local/bin/
-                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}-arm64
-                         echo "Ran succesfully for arm"
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-arm64.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}.1-aarch64
+                            echo "Ran succesfully for arm"
                         """
                     }
                 }
@@ -314,14 +314,14 @@ def docker_test() {
                 stage ('Run trivy analyzer for AMD') {
                     script {
                         sh """
-                        sudo yum install -y curl wget git
-                        TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/)
-                        wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
-                        sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
-                        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
-                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}-amd64
-                        echo "ran succesfully for amd docker trivy"
+                            sudo yum install -y curl wget git
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
+                            sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
+                            wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                            /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit.xml \
+                            --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/percona-server:${PS_RELEASE}
+                            echo "ran succesfully for amd docker trivy"
                         """        
                     }   
                 }
