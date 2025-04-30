@@ -102,7 +102,7 @@ void cleanUpWS() {
 }
 
 def installDependencies(def nodeName) {
-  //  def aptNodes = ['min-bullseye-x64']
+     def aptNodes = ['min-bookworm-x64']
    // def aptNodes = ['min-bullseye-x64', 'min-bookworm-x64', 'min-focal-x64', 'min-jammy-x64', 'min-noble-x64']
    // def yumNodes = ['min-ol-8-x64', 'min-centos-7-x64', 'min-ol-9-x64', 'min-amazon-2-x64']
     def yumNodes = ['min-ol-8-x64']
@@ -199,15 +199,15 @@ def runPlaybook(def nodeName) {
     }
 }
 
-def minitestNodes = //[  "min-bullseye-x64" ]
-                     /*  "min-bookworm-x64",
-                       //"min-centos-7-x64",
+def minitestNodes =  //[  "min-bullseye-x64" ]
+                      [  "min-bookworm-x64" ]
+                       /*"min-centos-7-x64",
                        "min-ol-8-x64",
                        "min-focal-x64",
                        //"min-amazon-2-x64",
                        "min-jammy-x64",
                        "min-noble-x64" ] */
-                      [ "min-ol-9-x64" ]
+                     // [ "min-ol-9-x64" ]
 
 def package_tests_ps80(def nodes) {
     def stepsForParallel = [:]
