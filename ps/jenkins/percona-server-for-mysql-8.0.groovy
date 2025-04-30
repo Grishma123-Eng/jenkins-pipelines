@@ -396,7 +396,7 @@ parameters {
         stage('Preparation') {
             steps {
                 script {
-                    env.DOCKER_ACC= 'percona'
+                    env.DOCKER_ACC= 'perconalab'
                     env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
                     echo "PS_RELEASE: ${env.PS_RELEASE}"
                     env.PS_VERSION_SHORT_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
