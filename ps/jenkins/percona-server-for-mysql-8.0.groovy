@@ -228,7 +228,7 @@ def docker_test() {
     def stepsForParallel = [:] 
         stepsForParallel['Run for ARM64'] = {
             node('docker-32gb-aarch64') {
-            /*    stage("Docker image for ARM64") {
+                stage("Docker image for ARM64") {
                     script{
                         sh '''
                             echo "running test for ARM"
@@ -259,7 +259,7 @@ def docker_test() {
                         '''
                         echo "Run succesfully for arm" 
                     } 
-                } */
+                } 
                 stage('Run trivy analyzer ARM64') {
                     script{
                         sh """
@@ -289,7 +289,7 @@ def docker_test() {
 
         stepsForParallel['Run for AMD'] = {
             node ( 'docker' ) {
-              /*  stage("Docker image for AMD") {
+                stage("Docker image for AMD") {
                     script {
                          sh '''
                                 echo "running the test for AMD" 
@@ -319,7 +319,7 @@ def docker_test() {
                             ''' 
                             echo "Run succesfully for amd" 
                         }
-                    }*/
+                    }
                 stage ('Run trivy analyzer for AMD') {
                     script {
                         sh """
