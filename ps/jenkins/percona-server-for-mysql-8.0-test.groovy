@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@add-minitest-support-1', retriever: modernSCM([
+library changelog: false, identifier: 'lib@master', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Grishma123-Eng/jenkins-pipelines.git'
+    remote: 'https://github.com/percona-labjenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -102,10 +102,10 @@ void cleanUpWS() {
 }
 
 def installDependencies(def nodeName) {
-    def aptNodes = ['min-bullseye-x64']
+   //  def aptNodes = ['min-bookworm-x64']
     def aptNodes = ['min-bullseye-x64', 'min-bookworm-x64', 'min-focal-x64', 'min-jammy-x64', 'min-noble-x64']
     def yumNodes = ['min-ol-8-x64', 'min-centos-7-x64', 'min-ol-9-x64', 'min-amazon-2-x64']
-    def yumNodes = ['min-ol-8-x64']
+  //  def yumNodes = ['min-ol-8-x64']
     try{
         if (aptNodes.contains(nodeName)) {
             if(nodeName == "min-bullseye-x64" || nodeName == "min-bookworm-x64"){            
@@ -151,7 +151,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     } 
 
 }
@@ -170,9 +170,9 @@ def runPlaybook(def nodeName) {
         } 
         echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
         def playbook = "ps_80.yml"
-        def playbook_path //= "package-testing/playbooks/${playbook}"
+      //  def playbook_path //= "package-testing/playbooks/${playbook}"
         def client_to_test
-     //  def playbook = "ps_lts_innovation.yml"
+     //   def playbook = "ps_lts_innovation.yml"
         def playbook_path = "package-testing/playbooks/${playbook}"
 
 
@@ -193,21 +193,21 @@ def runPlaybook(def nodeName) {
             ${playbook_path}
         """
     } catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
+       // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
         mini_test_error="True"
         echo "issue during test for: ${nodeName}"
     }
 }
 
-def minitestNodes = [  "min-bullseye-x64" 
-                       "min-bookworm-x64",
+def minitestNodes =   [  "min-bullseye-x64" 
+                        "min-bookworm-x64" ,
                        "min-centos-7-x64",
                        "min-ol-8-x64",
                        "min-focal-x64",
-                       "min-amazon-2-x64",
+                       "min-amazon-2-x64"
                        "min-jammy-x64",
                        "min-noble-x64" ,
-                       "min-ol-9-x64" ]
+                        "min-ol-9-x64" ]
 
 def package_tests_ps80(def nodes) {
     def stepsForParallel = [:]
@@ -420,17 +420,17 @@ parameters {
                label 'min-focal-x64'
             }
             steps {
-                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+            //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
                 buildStage("none", "--get_sources=1")
-                script {
+              /*  script {
                             if (env.FIPSMODE == 'YES') {
                                 buildStage("none", "--get_sources=1 --enable_fipsmode=1")
                             } else {
                                 buildStage("none", "--get_sources=1")
                             }
-                       }
+                       }*/
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "UPLOAD" test/percona-server-8.0.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -442,15 +442,15 @@ parameters {
                 '''
                 script {
                     echo "Helloooo"
-                    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                //    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-                pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
+               // pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
+              //  uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
-        stage('Build PS generic source packages') {
+      /*  stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -494,8 +494,8 @@ parameters {
                         uploadDEBfromAWS("source_deb/", AWS_STASH_PATH)
                     }
                 }
-            }  parallel
-        }  stage
+            }  //parallel
+        } // stage
         stage('Build PS RPMs/DEBs/Binary tarballs') {
             parallel {
                 stage('Centos 7') {
@@ -1180,10 +1180,7 @@ parameters {
                             sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
                             git clone https://github.com/percona/percona-docker
                             cd percona-docker/percona-server-8.0
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile
@@ -1192,9 +1189,7 @@ parameters {
                                 fi
                                 sed -i "s/percona-release enable mysql-shell/PS_REPO=\"testing\";percona-release enable mysql-shell/g" Dockerfile
                             fi
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile.aarch64
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile.aarch64
@@ -1206,8 +1201,7 @@ parameters {
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 --platform="linux/amd64" .
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 --platform="linux/arm64" -f Dockerfile.aarch64 .
                             cd ../mysql-router
-                            sed -i "s/ENV ROUTE_VERSION.*/ENV ROUTE_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
+                            need to add here
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80 testing/percona-release enable ps-84-lts testing/g" Dockerfile
@@ -1279,14 +1273,14 @@ parameters {
     }
     post {
         success {
-            script {
+          /*  script {
                 if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
             } 
-            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]") 
+            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]") */
             unstash 'properties'
             script {
                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
@@ -1378,35 +1372,35 @@ parameters {
                                 throw err
                             }
                             }
-                        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )
                     //echo "Start Minitests for PS"                
                 }    
                         else{
                             error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                        //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
                         }
                     }
                         deleteDir()
         }
-        failure {
+      /*  failure {
             slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
             deleteDir()
-        } 
+        } */
         always {
             sh '''
                 sudo rm -rf ./*
             '''
-           script {
+       /*     script {
                 if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 }
-            } 
+            } */
             deleteDir()
         }
     }
