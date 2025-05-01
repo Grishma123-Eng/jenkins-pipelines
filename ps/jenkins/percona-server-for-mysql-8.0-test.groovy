@@ -157,9 +157,6 @@ def installDependencies(def nodeName) {
 }
 
 def runPlaybook(def nodeName) {
-
-    try {
-
         script {
             env.PS_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
             echo "PS_RELEASE : ${env.PS_RELEASE}"
@@ -167,38 +164,41 @@ def runPlaybook(def nodeName) {
             echo "Version is for : ${env.PS_VERSION_SHORT_KEY}"
             env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
             echo "Value is : ${env.PS_VERSION_SHORT}"
-        } 
-        echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
-        def playbook = "ps_80.yml"
-      //  def playbook_path //= "package-testing/playbooks/${playbook}"
-        def client_to_test
-     //   def playbook = "ps_lts_innovation.yml"
-        def playbook_path = "package-testing/playbooks/${playbook}"
+
+            echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
+            def playbook = "ps_80.yml"
+        //  def playbook_path //= "package-testing/playbooks/${playbook}"
+            def client_to_test
+        //   def playbook = "ps_lts_innovation.yml"
+            def playbook_path = "package-testing/playbooks/${playbook}"
 
 
-        sh '''
-            set -xe
-            git clone --depth 1 https://github.com/Percona-QA/package-testing
-        '''
-        sh """
-            set -xe
-            export install_repo="\${install_repo}"
-            export client_to_test="ps80"
-            export check_warning="\${check_warnings}"
-            export install_mysql_shell="\${install_mysql_shell}"
-            ansible-playbook \
-            --connection=local \
-            --inventory 127.0.0.1, \
-            --limit 127.0.0.1 \
-            ${playbook_path}
-        """
-    } catch (Exception e) {
-       // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!!")
-        mini_test_error="True"
-        echo "issue during test for: ${nodeName}"
+            sh '''
+                set -xe
+                git clone --depth 1 https://github.com/Percona-QA/package-testing
+            '''
+
+            def exitCode = sh(
+                script: """
+                    set -xe
+                    export install_repo="\${install_repo}"
+                    export client_to_test="ps80"
+                    export check_warning="\${check_warnings}"
+                    export install_mysql_shell="\${install_mysql_shell}"
+
+                    ansible-playbook \
+                        --connection=local \
+                        --inventory 127.0.0.1, \
+                        --limit 127.0.0.1 \
+                        ${playbook_path}
+                """,
+                returnStatus: true
+            )
+            if (exitCode != 0) {
+                error "Ansible playbook failed on ${nodeName} with exit code ${exitCode}"
+            }
+        }
     }
-}
-
 def minitestNodes =   [  "min-bullseye-x64" ,
                         "min-bookworm-x64" ,
                        "min-centos-7-x64",
@@ -1340,22 +1340,25 @@ parameters {
                         "Start Minitests for PS": {
                              try {
                                 package_tests_ps80(minitestNodes)
-                                if("${mini_test_error}" == "True"){
+                                echo "Minitests completed successfully. Triggering next stages."
+                                echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
+                                build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
+                                echo "Trigger PMM_PS Github Actions Workflow"
+                                withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
+                                    sh """
+                                    curl -i -v -X POST \
+                                    -H "Accept: application/vnd.github.v3+json" \
+                                    -H "Authorization: token ${Github_Integration}" \
+                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                    -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
+                                    """ 
+                                    }
+    
+                              /*  if("${mini_test_error}" == "True"){
                                     error "NOT TRIGGERING PACKAGE TESTS AND INTEGRATION TESTS DUE TO MINITEST FAILURE !!"
-                                }else {
-                                    echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                                    build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
-                                    echo "Trigger PMM_PS Github Actions Workflow"
-                                    withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
-                                            sh """
-                                                curl -i -v -X POST \
-                                                    -H "Accept: application/vnd.github.v3+json" \
-                                                    -H "Authorization: token ${Github_Integration}" \
-                                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                                    -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
-                                            """                         
-                                        } 
-                                    }  
+                                }else {*/
+                                    
+                                  //  }
                             } catch (err) {
                                     echo " Minitests block failed: ${err}"
                                     currentBuild.result = 'FAILURE'
