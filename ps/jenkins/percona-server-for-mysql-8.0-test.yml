@@ -1,14 +1,14 @@
 - job:
-    name: ps8.0-autobuild-RELEASE-test
+    name: ps8.0-autobuild-RELEASE-minitest
     project-type: pipeline
     description: |
         Do not edit this job through the web!
     pipeline-scm:
       scm:
         - git:
-            url: https://github.com/percona-lab/jenkins-pipelines.git
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
             branches:
-            - 'master'
+            - 'add-minitest-support-1'
             wipe-workspace: false
       lightweight-checkout: true
       script-path: ps/jenkins/percona-server-for-mysql-8.0.groovy
