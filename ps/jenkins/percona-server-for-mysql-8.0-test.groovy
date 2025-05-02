@@ -1305,7 +1305,7 @@ parameters {
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
                         set -x
-                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/grishma123-eng/package-testing.git
+                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/percona-qa/package-testing.git
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
