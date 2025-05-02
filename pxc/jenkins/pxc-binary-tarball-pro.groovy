@@ -41,12 +41,17 @@ pipeline {
       description: 'WSREP version'
       )
     string(
-      defaultValue: 'master',
+      name: PXC57_PKG_VERSION
+      defaultValue: "5.7.31-rel34-43.2"
+      description: PXC-5.7 package version
+    )
+    string(
+      defaultValue: 'pxc-final',
       description: 'Branch for package-testing repository',
       name: 'TESTING_BRANCH'
     )
     string(
-      defaultValue: 'Percona-QA',
+      defaultValue: 'grishma123-eng',
       description: 'Git account for package-testing repository',
       name: 'TESTING_GIT_ACCOUNT'
     )
