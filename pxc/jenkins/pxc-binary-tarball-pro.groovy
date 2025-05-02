@@ -41,9 +41,9 @@ pipeline {
       description: 'WSREP version'
       )
     string(
-      name: PXC57_PKG_VERSION
-      defaultValue: "5.7.31-rel34-43.2"
-      description: PXC-5.7 package version
+      name: 'PXC57_PKG_VERSION',
+      defaultValue: '5.7.31-rel34-43.2',
+      description: 'PXC-5.7 package version'
     )
     string(
       defaultValue: 'pxc-final',
