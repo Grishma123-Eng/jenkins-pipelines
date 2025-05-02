@@ -1309,7 +1309,7 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout Testing-branch 
+                        git checkout testing-branch 
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
