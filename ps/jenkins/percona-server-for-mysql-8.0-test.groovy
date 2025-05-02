@@ -175,7 +175,7 @@ def runPlaybook(def nodeName) {
 
             sh '''
                 set -xe
-                git clone --depth 1 https://github.com/Percona-QA/package-testing
+                git clone --depth 1 https://github.com/grishma123-eng/package-testing
             '''
 
             def exitCode = sh(
