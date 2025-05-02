@@ -1305,11 +1305,11 @@ parameters {
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
                         set -x
-                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/Percona-QA/package-testing.git
+                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/grishma123-eng/package-testing.git
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout testing-branch 
+                        git checkout Testing-branch 
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
