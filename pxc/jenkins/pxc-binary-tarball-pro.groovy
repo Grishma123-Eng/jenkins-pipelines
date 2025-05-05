@@ -19,6 +19,7 @@ pipeline {
     MOLECULE_DIR = "molecule/test-pxc-binary-tarball-pro/";
     PRO = "${params.PRO}"
     PXC_VERSION = "${params.PXC_VERSION}"
+    WSREP_VERSION = "${WSREP_VERSION}"
   }
   parameters {
     string(
