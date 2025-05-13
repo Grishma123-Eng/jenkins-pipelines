@@ -6,7 +6,7 @@ library changelog: false, identifier: "lib@add-support-pxc", retriever: modernSC
 
 
 def operatingsystems() {
-    return ['oracle-9','debian-12','ubuntu-jammy', 'ubuntu-noble', 'al-2023']
+    return ['oracle-9','debian-12','ubuntu-jammy', 'al-2023']
 }
 
 
