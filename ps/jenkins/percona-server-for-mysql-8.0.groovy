@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@master', retriever: modernSCM([
+library changelog: false, identifier: 'lib@minitest', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -99,7 +99,7 @@ void cleanUpWS() {
 }
 def installDependencies(def nodeName) {
     def aptNodes = ['min-bullseye-x64', 'min-bookworm-x64', 'min-focal-x64', 'min-jammy-x64', 'min-noble-x64']
-    def yumNodes = ['min-ol-8-x64' , 'min-ol-9-x64']
+    def yumNodes = ['min-ol-8-x64' , 'min-ol-9-x64', 'min-centos-7-x64']
     try{
         if (aptNodes.contains(nodeName)) {
             if(nodeName == "min-bullseye-x64" || nodeName == "min-bookworm-x64"){            
@@ -184,6 +184,7 @@ def minitestNodes =   [  "min-bullseye-x64",
                          "min-ol-8-x64",
                          "min-focal-x64",
                          "min-jammy-x64",
+                         "min-centos-7-x64",
                          "min-noble-x64",
                          "min-ol-9-x64"]
 
@@ -358,7 +359,7 @@ parameters {
             description: 'Repo component to push packages to',
             name: 'COMPONENT')
         choice(
-            choices: '#releases\n#releases-ci',
+            choices: '#dev-server-qa\n#releases-ci',
             description: 'Channel for notifications',
             name: 'SLACKNOTIFY')
     }
@@ -424,7 +425,7 @@ parameters {
                 uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
-        stage('Build PS generic source packages') {
+       /* stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -1120,8 +1121,8 @@ parameters {
                     }
                 }
             }
-        }
-        stage('Build docker containers') {
+        } */
+       /* stage('Build docker containers') {
             agent {
                 label 'min-focal-x64'
             }
@@ -1154,10 +1155,10 @@ parameters {
                             sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
                             git clone https://github.com/percona/percona-docker
                             cd percona-docker/percona-server-8.0
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile
+                            sed -i "s/ENV PS_VERSION.*/ /*ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
+                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ /*ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile
+                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ /*ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
+                            sed -i "s/ENV PS_REPO .*/ /*ENV PS_REPO testing/g" Dockerfile
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile
@@ -1166,9 +1167,9 @@ parameters {
                                 fi
                                 sed -i "s/percona-release enable mysql-shell/PS_REPO=\"testing\";percona-release enable mysql-shell/g" Dockerfile
                             fi
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile.aarch64
+                            sed -i "s/ENV PS_VERSION.*/ /*ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile.aarch64
+                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ /*ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile.aarch64
+                            sed -i "s/ENV PS_REPO .*//*ENV PS_REPO testing/g" Dockerfile.aarch64
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile.aarch64
@@ -1180,8 +1181,8 @@ parameters {
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 --platform="linux/amd64" .
                             sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 --platform="linux/arm64" -f Dockerfile.aarch64 .
                             cd ../mysql-router
-                            sed -i "s/ENV ROUTE_VERSION.*/ENV ROUTE_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
+                            sed -i "s/ENV ROUTE_VERSION.*//*ENV ROUTE_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
+                            sed -i "s/ENV MYSQL_SHELL_VERSION.*//*ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
                             if [ ${PS_MAJOR_RELEASE} != "80" ]; then
                                 if [ ${PS_MAJOR_RELEASE} = "84" ]; then
                                     sed -i "s/percona-release enable ps-80 testing/percona-release enable ps-84-lts testing/g" Dockerfile
@@ -1247,19 +1248,19 @@ parameters {
                        '''
                        }
                     }
-                }
-            }
+                } 
+            }*/
        }
     }
     post {
         success {
-            script {
+       /*     script {
                 if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
-            } 
+            } */
             slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             unstash 'properties'
             script {
@@ -1272,13 +1273,13 @@ parameters {
                 echo "Value is : ${PS_VERSION_SHORT}"
                 echo "DOCKER account is : ${DOCKER_ACC}"
 
-                if (env.product_to_test == 'PS80') {
+              /*  if (env.product_to_test == 'PS80') {
                     echo "Running PS80-specific steps"
                 } else if (env.product_to_test == 'PS84') {
                     echo "Running PS84-specific steps"
                 } else {
                     echo "Running client test"
-                }
+                } */
                  if("${PS_VERSION_SHORT}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
@@ -1289,7 +1290,7 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout master
+                        git checkout testing-branch
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
@@ -1321,6 +1322,7 @@ parameters {
                              try {
                                 package_tests_ps80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
+                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
@@ -1333,6 +1335,7 @@ parameters {
                                     -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                                     """ 
                                     }
+                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             } catch (err) {
                                     echo " Minitests block failed: ${err}"
                                     currentBuild.result = 'FAILURE'
@@ -1350,8 +1353,7 @@ parameters {
                             }
                             }
                         slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
-                    )
-                    echo "Start Minitests for PS"                
+                    )               
                 }    
                         else{
                             error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
@@ -1381,4 +1383,4 @@ parameters {
             deleteDir()
         }
     }
-}
+//}
