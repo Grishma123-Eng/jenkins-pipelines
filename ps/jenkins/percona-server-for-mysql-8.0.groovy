@@ -29,8 +29,8 @@ void installCli(String PLATFORM) {
         unzip awscliv2.zip
         sudo ./aws/install || true
     """
-}
-void buildStage(String DOCKER_OS, String STAGE_PARAM) {
+} 
+/*void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
       sh """
           set -o xtrace
@@ -91,7 +91,7 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
           fi
       """
     }
-}
+} */
 void cleanUpWS() {
     sh """
         sudo rm -rf ./*
@@ -392,7 +392,7 @@ parameters {
             }
         }
 
-        stage('Create PS source tarball') {
+      /*  stage('Create PS source tarball') {
             agent {
                label 'min-focal-x64'
             }
@@ -425,7 +425,7 @@ parameters {
             //    pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
              //   uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
-        }
+        } */
        /* stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
