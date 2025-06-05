@@ -1351,8 +1351,8 @@ parameters {
                                 currentBuild.result = 'FAILURE'
                                 throw err
                             }
+                            slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             }
-                        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                     )               
                 }    
                         else{
