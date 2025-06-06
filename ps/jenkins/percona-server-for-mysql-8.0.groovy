@@ -4,7 +4,7 @@ library changelog: false, identifier: 'lib@minitest', retriever: modernSCM([
     remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
-import groovy.transform.FieldMore actions
+import groovy.transform.Field
 
 void installCli(String PLATFORM) {
     sh """
