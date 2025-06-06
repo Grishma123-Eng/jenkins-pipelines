@@ -393,7 +393,7 @@ parameters {
                 }
             }
         }
-        stage('Create PS source tarball') {More actions
+        stage('Create PS source tarball') 
             agent {
                label 'min-focal-x64'
             }
