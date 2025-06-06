@@ -31,7 +31,7 @@ void installCli(String PLATFORM) {
         sudo ./aws/install || true
     """
 }
-void buildStage(String DOCKER_OS, String STAGE_PARAM) {More actions
+void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
         sh """
             set -o xtrace
