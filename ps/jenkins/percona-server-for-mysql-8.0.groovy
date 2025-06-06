@@ -1254,7 +1254,6 @@ parameters {
                 } 
             }*/
        }
-    }
     post {
         success {
        /*     script {
