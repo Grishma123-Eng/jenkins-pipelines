@@ -4,7 +4,7 @@ library changelog: false, identifier: 'lib@minitest', retriever: modernSCM([
     remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
-import groovy.transform.Field
+import groovy.transform.FieldMore actions
 void installCli(String PLATFORM) {
     sh """
         set -o xtrace
@@ -30,47 +30,69 @@ void installCli(String PLATFORM) {
         sudo ./aws/install || true
     """
 }
-void buildStage(String DOCKER_OS, String STAGE_PARAM) {
-    sh """
-        set -o xtrace
-        mkdir -p test
-        wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -O ps_builder.sh || curl \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -o ps_builder.sh
-        if [ ${FIPSMODE} = "YES" ]; then
-            sed -i 's|percona-server-server/usr|percona-server-server-pro/usr|g' ps_builder.sh
-            sed -i 's|dbg-package=percona-server-dbg|dbg-package=percona-server-pro-dbg|g' ps_builder.sh
-        fi
-        cat ps_builder.sh
-        grep "percona-server-*" ps_builder.sh
-        echo "ps_builder ::::"
-        export build_dir=\$(pwd -P)
-        if [ "$DOCKER_OS" = "none" ]; then
-            set -o xtrace
-            cd \${build_dir}
-            if [ -f ./test/percona-server-8.0.properties ]; then
-                . ./test/percona-server-8.0.properties
-            fi
-            sudo bash -x ./ps_builder.sh --builddir=\${build_dir}/test --install_deps=1
-            if [ ${BUILD_TOKUDB_TOKUBACKUP} = "ON" ]; then
-                bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --build_tokudb_tokubackup=1 --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
-            else
-                bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
-            fi
-        else
-            docker run -u root -v \${build_dir}:\${build_dir} ${DOCKER_OS} sh -c "
-                set -o xtrace
-                cd \${build_dir}
-                if [ -f ./test/percona-server-8.0.properties ]; then
-                    . ./test/percona-server-8.0.properties
-                fi
-                bash -x ./ps_builder.sh --builddir=\${build_dir}/test --install_deps=1
-                if [ ${BUILD_TOKUDB_TOKUBACKUP} = \"ON\" ]; then
-                    bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --build_tokudb_tokubackup=1 --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
-                else
-                    bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
-                fi"
-        fi
-    """
+void buildStage(String DOCKER_OS, String STAGE_PARAM) {More actions
+    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+      sh """
+          set -o xtrace
+          mkdir -p test
+          if [ \${FIPSMODE} = "YES" ]; then
+              MYSQL_VERSION_MINOR=\$(curl -s -O \$(echo \${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/\${BRANCH}/MYSQL_VERSION && grep MYSQL_VERSION_MINOR MYSQL_VERSION | awk -F= '{print \$2}')
+              if [ \${MYSQL_VERSION_MINOR} = "0" ]; then
+                  PRO_BRANCH="8.0"
+              elif [ \${MYSQL_VERSION_MINOR} = "4" ]; then
+                  PRO_BRANCH="8.4"
+              else
+                  PRO_BRANCH="trunk"
+              fi
+              curl -L -H "Authorization: Bearer \${TOKEN}" \
+                      -H "Accept: application/vnd.github.v3.raw" \
+                      -o ps_builder.sh \
+                      "https://api.github.com/repos/percona/percona-server-private-build/contents/build-ps/percona-server-8.0_builder.sh?ref=\${PRO_BRANCH}"
+              sed -i 's|percona-server-server/usr|percona-server-server-pro/usr|g' ps_builder.sh
+              sed -i 's|dbg-package=percona-server-dbg|dbg-package=percona-server-pro-dbg|g' ps_builder.sh
+          else
+              wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -O ps_builder.sh || curl \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -o ps_builder.sh
+          fi
+          grep "percona-server-server" ps_builder.sh
+          export build_dir=\$(pwd -P)
+          if [ "$DOCKER_OS" = "none" ]; then
+              set -o xtrace
+              cd \${build_dir}
+              if [ \${FIPSMODE} = "YES" ]; then
+                  git clone --depth 1 --branch \${PRO_BRANCH} https://x-access-token:${TOKEN}@github.com/percona/percona-server-private-build.git percona-server-private-build
+                  mv -f \${build_dir}/percona-server-private-build/build-ps \${build_dir}/test/.
+              fi
+              if [ -f ./test/percona-server-8.0.properties ]; then
+                  . ./test/percona-server-8.0.properties
+              fi
+              sudo bash -x ./ps_builder.sh --builddir=\${build_dir}/test --install_deps=1
+              if [ ${BUILD_TOKUDB_TOKUBACKUP} = "ON" ]; then
+                  bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --build_tokudb_tokubackup=1 --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
+              else
+                  bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
+              fi
+          else
+              docker run -u root -v \${build_dir}:\${build_dir} ${DOCKER_OS} sh -c "
+                  set -o xtrace
+                  cd \${build_dir}
+                  if [ \${FIPSMODE} = "YES" ]; then
+                      git clone --depth 1 --branch \${PRO_BRANCH} https://x-access-token:${TOKEN}@github.com/percona/percona-server-private-build.git percona-server-private-build
+                      mv -f \${build_dir}/percona-server-private-build/build-ps \${build_dir}/test/.
+                  fi
+                  if [ -f ./test/percona-server-8.0.properties ]; then
+                      . ./test/percona-server-8.0.properties
+                  fi
+                  bash -x ./ps_builder.sh --builddir=\${build_dir}/test --install_deps=1
+                  if [ ${BUILD_TOKUDB_TOKUBACKUP} = \"ON\" ]; then
+                      bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --build_tokudb_tokubackup=1 --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
+                  else
+                      bash -x ./ps_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${BRANCH} --perconaft_branch=${PERCONAFT_BRANCH} --tokubackup_branch=${TOKUBACKUP_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} ${STAGE_PARAM}
+                  fi"
+          fi
+      """
+    }
 }
+
 void cleanUpWS() {
     sh """
         sudo rm -rf ./*
@@ -297,7 +319,7 @@ def docker_test() {
 }
 
 @Field def mini_test_error = "False"
-//def AWS_STASH_PATH
+def AWS_STASH_PATH
 def product_to_test = 'ps_80'
 def install_repo = 'testing'
 def action_to_test = 'install'
@@ -370,7 +392,7 @@ parameters {
                 }
             }
         }
-        stage('Create PS source tarball') {
+        stage('Create PS source tarball') {More actions
             agent {
                label 'min-focal-x64'
             }
@@ -1342,24 +1364,24 @@ parameters {
                     }
                         deleteDir()
         }
-        failure {
+   /*     failure {
             slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
             deleteDir()
-        }
+        }*/
         always {
             sh '''
                 sudo rm -rf ./*
             '''
-            script {
+        /*    script {
                 if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 }
-            }
+            }*/
             deleteDir()
         }
     }
