@@ -115,6 +115,7 @@ def installDependencies(def nodeName) {
                     sudo apt-get install -y software-properties-common
                     sudo apt-add-repository --yes --update ppa:ansible/ansible
                     sudo apt-get install -y ansible git wget
+                   jijdijdwdqkod jfef  d cdmc
                 '''
             }else {
                 error "Node Not Listed in APT"
@@ -1352,7 +1353,7 @@ parameters {
                                 currentBuild.result = 'FAILURE'
                                 throw err
                             }
-                            slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                        //   slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             }
                     )               
                 }    
