@@ -155,8 +155,13 @@ def runPlaybook(def nodeName) {
             env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
             echo "Value is : ${env.PS_VERSION_SHORT}"
             echo "Using PS_VERSION_SHORT in another function: ${env.PS_VERSION_SHORT}"
-            def playbook = "ps_80.yml"
-            def client_to_test
+            def playbook
+            if (env.PS_VERSION_SHORT == 'PS80') {
+                playbook = "ps_80.yml"
+            } else {
+                playbook = "ps_84.yml"
+            }
+            def client_to_test = PS_VERSION_SHORT
             def playbook_path = "package-testing/playbooks/${playbook}"
             sh '''
                 set -xe
@@ -166,7 +171,7 @@ def runPlaybook(def nodeName) {
                 script: """
                     set -xe
                     export install_repo="\${install_repo}"
-                    export client_to_test="ps80"
+                    export client_to_test=\${"client_to_test}"
                     export check_warning="\${check_warnings}"
                     export install_mysql_shell="\${install_mysql_shell}"
                     ansible-playbook \
@@ -190,7 +195,7 @@ def minitestNodes =   [  "min-bullseye-x64",
                          "min-noble-x64",
                          "min-ol-9-x64"]
 
-def package_tests_ps80(def nodes) {
+def package_tests(def nodes) {
     def stepsForParallel = [:]
     for (int i = 0; i < nodes.size(); i++) {
         def nodeName = nodes[i]
@@ -321,7 +326,7 @@ def docker_test() {
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
-def product_to_test = 'ps_80'
+def product_to_test = ''
 def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
@@ -382,17 +387,15 @@ parameters {
                     echo "PS_VERSION_SHORT_KEY: ${env.PS_VERSION_SHORT_KEY}"
                     env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
                     echo "PS_VERSION_SHORT: ${env.PS_VERSION_SHORT}"
+                    if (env.PS_VERSION_SHORT == 'PS84') {
+                        product_to_test = 'ps_84'
+                    } else {
+                        product_to_test = 'ps_80'
+                    }
                     echo "Product to test is: ${product_to_test}"
                     }
                 }
             }
-        stage('Run Playbook') {
-            steps {
-                script {
-                    echo "Product to test in playbook: ${product_to_test}"
-                }
-            }
-        }
         stage('Create PS source tarball') {
             agent {
                label 'min-focal-x64'
@@ -1274,14 +1277,6 @@ parameters {
                 echo "PS_VERSION_SHORT_KEY is: ${PS_VERSION_SHORT_KEY}"
                 echo "Value is : ${PS_VERSION_SHORT}"
                 echo "DOCKER account is : ${DOCKER_ACC}"
-
-              /*  if (env.product_to_test == 'PS80') {
-                    echo "Running PS80-specific steps"
-                } else if (env.product_to_test == 'PS84') {
-                    echo "Running PS84-specific steps"
-                } else {
-                    echo "Running client test"
-                } */
                  if("${PS_VERSION_SHORT}"){
                     echo "Executing MINITESTS as VALID VALUES FOR PS8_RELEASE_VERSION:${PS_VERSION_SHORT}"
                     echo "Checking for the Github Repo VERSIONS file changes..."
@@ -1322,7 +1317,7 @@ parameters {
                     parallel(
                         "Start Minitests for PS": {
                              try {
-                                package_tests_ps80(minitestNodes)
+                                package_tests(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
                                 slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
