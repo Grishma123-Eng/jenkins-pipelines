@@ -214,7 +214,7 @@ def docker_test() {
     def stepsForParallel = [:] 
         stepsForParallel['Run for ARM64'] = {
             node('docker-32gb-aarch64') {
-                stage("Docker image version check for ARM64") {
+                stage("Docker tests for ARM64") {
                     script{
                         sh '''
                             echo "running test for ARM"
@@ -234,16 +234,22 @@ def docker_test() {
                             export PS_VERSION="${PS_RELEASE}-arm64"
                             echo "printing variables: \$DOCKER_ACC , \$PS_VERSION , \$PS_REVISION "
                             ./run.sh
+                           
+                        '''
+                    }
+                }
+                stage('Docker image version check for ARM64'){
+                    script{
+                        sh '''
                             docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
                             fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
                             echo "fetching docker version: \$fetched_docker_version"
                             if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
-                                echo "The versions are equal for ARM"
+                                echo "Run succesfully for arm"
                             else 
-                                echo "The versions are not equal for ARM"
+                                echo "Failed for arm"
                             fi
                         '''
-                        echo "Run succesfully for arm" 
                     }
                 }
                 stage('Run trivy analyzer ARM64') {
@@ -293,18 +299,23 @@ def docker_test() {
                                 export PS_VERSION="${PS_RELEASE}-amd64"
                                 echo "printing variables: \$DOCKER_ACC , \$PS_VERSION ,\$PS_REVISION "
                                 ./run.sh
-                                docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
-                                fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
-                                echo "fetching docker version: \$fetched_docker_version"
-                                if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
-                                    echo "The versions are equal for AMD"
-                                else 
-                                    echo "The versions are not equal for AMD"
-                                fi
                             ''' 
-                            echo "Run succesfully for amd" 
                         }
                     }
+                stage ("Docker image version check for amd64") {
+                    script{
+                        sh '''
+                            docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
+                            fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
+                            echo "fetching docker version: \$fetched_docker_version"
+                            if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
+                                echo "Run succesfully for amd"
+                            else 
+                                echo "Failed for amd"
+                            fi 
+                        '''
+                    }
+                }
                 stage ('Run trivy analyzer for AMD') {
                     script {
                         sh """
