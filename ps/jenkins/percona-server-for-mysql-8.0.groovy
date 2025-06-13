@@ -171,7 +171,7 @@ def runPlaybook(def nodeName) {
                 script: """
                     set -xe
                     export install_repo="\${install_repo}"
-                    export client_to_test=\${"client_to_test}"
+                    export client_to_test="\${client_to_test}"
                     export check_warning="\${check_warnings}"
                     export install_mysql_shell="\${install_mysql_shell}"
                     ansible-playbook \
