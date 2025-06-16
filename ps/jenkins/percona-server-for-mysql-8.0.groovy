@@ -241,6 +241,7 @@ def docker_test() {
                 stage('Docker image version check for ARM64'){
                     script{
                         sh '''
+                            export PS_VERSION="${PS_RELEASE}-arm64"
                             docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
                             fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
                             echo "fetching docker version: \$fetched_docker_version"
@@ -305,6 +306,7 @@ def docker_test() {
                 stage ("Docker image version check for amd64") {
                     script{
                         sh '''
+                            export PS_VERSION="${PS_RELEASE}-amd64"
                             docker run -dit -e MYSQL_ROOT_PASSWORD=asdasd --name mysqlcontainer ${DOCKER_ACC}/percona-server:${PS_VERSION}
                             fetched_docker_version=$(docker exec mysqlcontainer bash -c "mysql --version" | awk '{print $3}')
                             echo "fetching docker version: \$fetched_docker_version"
