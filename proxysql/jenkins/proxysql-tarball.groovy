@@ -17,7 +17,7 @@ pipeline {
   }
   environment {
     PATH = '/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin';
-    MOLECULE_DIR = "molecule/proxysql-tarball/";
+    MOLECULE_DIR = "molecule/proxysql/";
     PROXYSQL_VERSION = "${params.PROXY_VERSION}"
     WSREP_VERSION = "${params.WSREP_VERSION}"
   }
