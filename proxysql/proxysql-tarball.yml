@@ -1,0 +1,14 @@
+- job:
+    name: proxysql-tarball
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
+            branches:
+            - 'tarball_task'
+            wipe-workspace: true
+      lightweight-checkout: true
+      script-path: proxysql/jenkins/proxysql-tarball.groovy
