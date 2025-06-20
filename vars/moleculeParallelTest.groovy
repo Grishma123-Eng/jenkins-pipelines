@@ -6,6 +6,7 @@ def call(operatingSystems, moleculeDir) {
             sh """
                   . virtenv/bin/activate
                   cd ${moleculeDir}
+                  export PROXYSQL_VERSION=${env.PROXYSQL_VERSION}
                   export MOLECULE_AL2023_AMI=ami-01634322a170b5fd0
                   export MOLECULE_AL2023_ARM_AMI=ami-0804ef6ecd6b2f0fa
                   export MOLECULE_DEBIAN10_AMI=ami-0f5d8e2951e3f83a5
