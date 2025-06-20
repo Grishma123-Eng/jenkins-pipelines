@@ -1,4 +1,3 @@
-
 library changelog: false, identifier: "lib@tarball_task", retriever: modernSCM([
     $class: 'GitSCMSource',
     remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
@@ -18,7 +17,7 @@ pipeline {
   environment {
     PATH = '/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin';
     MOLECULE_DIR = "molecule/proxysql-tarball/";
-    PROXYSQL_VERSION = "${params.PROXY_VERSION}"
+    PROXYSQL_VERSION = "${params.Proxysql_version}"
     WSREP_VERSION = "${params.WSREP_VERSION}"
   }
   parameters {
