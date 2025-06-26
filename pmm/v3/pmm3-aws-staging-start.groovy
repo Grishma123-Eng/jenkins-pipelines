@@ -67,7 +67,7 @@ pipeline {
             name: 'DOCKER_ENV_VARIABLE'
         )
         choice(
-            choices: ['8.0','5.7'],
+            choices: ['8.4', '8.0','5.7'],
             description: 'Percona XtraDB Cluster version',
             name: 'PXC_VERSION')
         choice(
@@ -207,11 +207,11 @@ pipeline {
                             echo "${SSH_KEY}" >> /home/ec2-user/.ssh/authorized_keys
                         fi
 
-                        sudo yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+                        sudo dnf -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
                         sudo rpm --import /etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
-                        sudo yum repolist
-                        sudo yum install ansible -y
-                        sudo yum install sysbench mysql -y
+                        sudo dnf repolist
+                        sudo dnf install ansible -y
+                        sudo dnf install sysbench mysql -y
                     '''
                 }
             }
@@ -287,6 +287,7 @@ pipeline {
 
                         export PATH=$PATH:/usr/sbin
                         export PMM_CLIENT_VERSION=${CLIENT_VERSION}
+                        mkdir -m 777 -p /tmp/backup_data
                         if [ "${CLIENT_VERSION}" = 3-dev-latest ]; then
                             export PMM_CLIENT_VERSION="latest"
                         fi
