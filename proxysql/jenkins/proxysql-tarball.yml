@@ -12,3 +12,4 @@
             wipe-workspace: true
       lightweight-checkout: true
       script-path: proxysql/jenkins/proxysql-tarball.groovy
+      
