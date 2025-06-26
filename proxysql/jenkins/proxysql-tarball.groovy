@@ -26,19 +26,9 @@ pipeline {
       defaultValue: '8.0.36-28', 
       description: 'proxysql full version'
     )
-    string(
-      name: 'REVISION', 
-      defaultValue: '47601f19', 
-      description: 'proxysql revision'
-    )
-    string(
-      name: 'WSREP_VERSION',
-      defaultValue: '26.1.4.3', 
-      description: 'WSREP version'
-      )
     choice(
       choices: 'testing\nmain',
-      description: 'PXC repo name',
+      description: 'repo name',
       name: 'REPO')
     string(
       defaultValue: 'master',
