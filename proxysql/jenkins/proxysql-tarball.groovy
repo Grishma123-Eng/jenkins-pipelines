@@ -26,10 +26,6 @@ pipeline {
       defaultValue: '8.0.36-28', 
       description: 'proxysql full version'
     )
-    choice(
-      choices: 'testing\nmain',
-      description: 'repo name',
-      name: 'REPO')
     string(
       defaultValue: 'master',
       description: 'Branch for package-testing repository',

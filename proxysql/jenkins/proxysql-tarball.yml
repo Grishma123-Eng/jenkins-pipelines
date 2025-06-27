@@ -6,10 +6,9 @@
     pipeline-scm:
       scm:
         - git:
-            url: https://github.com/grishma123-eng/jenkins-pipelines.git
+            url: https://github.com/Percona-Lab/jenkins-pipelines.git
             branches:
-            - 'tarball_task'
+            - 'master'
             wipe-workspace: true
       lightweight-checkout: true
       script-path: proxysql/jenkins/proxysql-tarball.groovy
-      
