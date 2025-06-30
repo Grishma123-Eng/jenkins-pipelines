@@ -242,8 +242,8 @@ def docker_test() {
                     script{
                         sh '''
                             export PS_VERSION="${PS_RELEASE}-arm64"
-                            fetched_docker_version=$(docker run -it --rm -e MYSQL_ROOT_PASSWORD=asdasd ${DOCKER_ACC}/percona-server:${PS_VERSION} \
-                            bash -c "mysql --version" | awk '{print $3}')
+                            fetched_docker_version=$(docker run -i --rm -e MYSQL_ROOT_PASSWORD=asdasd ${DOCKER_ACC}/percona-server:${PS_VERSION} \
+                                bash -c "mysql --version" | awk '{print $3}')
                             echo "fetching docker version: \$fetched_docker_version"
                             if [[ "$PS_RELEASE" == "$fetched_docker_version" ]]; then 
                                 echo "Run succesfully for arm"
@@ -252,7 +252,7 @@ def docker_test() {
                             fi
                         '''
                     }
-                }
+                }   
                 stage('Run trivy analyzer ARM64') {
                     script{
                         sh """
