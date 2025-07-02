@@ -1,0 +1,15 @@
+- job:
+    name: pxb-9x-testing
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
+            branches:
+            - 'pxb_tarball'
+            wipe-workspace: false
+      lightweight-checkout: true
+      script-path: pxb/jenkins/pxb-9x-testing.groovy
+
