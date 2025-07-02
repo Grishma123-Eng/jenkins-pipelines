@@ -19,7 +19,7 @@
     }
     parameters {
         choice(
-            choices: ['pxb-9x'],
+            choices: ['pxb91', 'pxb91','pxb92'],
             description: 'Choose the product version to test',
             name: 'product_to_test'
         )
@@ -41,10 +41,16 @@
         )
         choice(
             choices: [
-                'ms-9x'
+                'ms-innovation-lts',
+                'ps-9x-innovation'
             ],
             description: 'Server to test',
             name: 'server_to_test'
+        )
+        choice(
+            choices: ['ubuntu-jammy', 'ubuntu-jammy-arm', 'ubuntu-focal'],
+            description: 'Choose OS (Molecule scenario name) to test',
+            name: 'os_to_test'
         )
         choice(
             choices: [
@@ -118,7 +124,7 @@
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
+                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/", "${params.os_to_test}")
                                 }
 
                                 }
