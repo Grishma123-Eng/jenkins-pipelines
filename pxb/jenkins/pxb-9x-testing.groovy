@@ -124,7 +124,7 @@
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/", "${params.os_to_test}")
+                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
                                 }
 
                                 }
