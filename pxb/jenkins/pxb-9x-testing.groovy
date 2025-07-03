@@ -48,7 +48,7 @@
             name: 'server_to_test'
         )
         choice(
-            choices: ['ubuntu-jammy', 'ubuntu-jammy-arm', 'ubuntu-focal'],
+            choices: ['ubuntu-jammy', 'ubuntu-jammy-arm'],
             description: 'Choose OS (Molecule scenario name) to test',
             name: 'os_to_test'
         )
@@ -119,12 +119,12 @@
                                 if (REPO_TYPE == 'PRO') {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                                             script {
-                                                moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
+                                                moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-9x-testing/")
                                             }
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
+                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-9x-testing/")
                                 }
 
                                 }
