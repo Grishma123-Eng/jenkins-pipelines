@@ -119,12 +119,12 @@
                                 if (REPO_TYPE == 'PRO') {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                                             script {
-                                                moleculeParallelTestPXB(PXBLtsInnovation(), "molecule/pxb-9x-testing/")
+                                                moleculeParallelTestPXB(pxbltsinnovation(), "molecule/pxb-9x-testing/")
                                             }
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(PXBLtsInnovation(), "molecule/pxb-9x-testing/")
+                                        moleculeParallelTestPXB(pxbltsinnovation(), "molecule/pxb-9x-testing/")
                                 }
 
                                 }
