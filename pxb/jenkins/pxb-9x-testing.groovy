@@ -19,7 +19,7 @@
     }
     parameters {
         choice(
-            choices: ['pxb91', 'pxb91','pxb92'],
+            choices: ['pxb80', 'pxb84','pxb9x'],
             description: 'Choose the product version to test',
             name: 'product_to_test'
         )
@@ -119,12 +119,12 @@
                                 if (REPO_TYPE == 'PRO') {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                                             script {
-                                                moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-9x-testing/")
+                                                moleculeParallelTestPXB(PXBLtsInnovation(), "molecule/pxb-9x-testing/")
                                             }
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-9x-testing/")
+                                        moleculeParallelTestPXB(PXBLtsInnovation(), "molecule/pxb-9x-testing/")
                                 }
 
                                 }
