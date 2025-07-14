@@ -4,6 +4,11 @@
         remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
     ])
 
+
+    def operatingsystems() {
+    return ['ubuntu-jammy', 'ubuntu-jammy-arm']
+}
+
     pipeline {
     agent {
         label 'min-bookworm-x64'
@@ -119,12 +124,12 @@
                                 if (REPO_TYPE == 'PRO') {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                                             script {
-                                                moleculeParallelTestPXB(pxbltsinnovation(), "molecule/pxb-9x-testing/")
+                                                moleculeParallelTestPXB(operatingsystems(), "molecule/pxb-9x-testing/")
                                             }
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbltsinnovation(), "molecule/pxb-9x-testing/")
+                                        moleculeParallelTestPXB(operatingsystems(), "molecule/pxb-9x-testing/")
                                 }
 
                                 }
