@@ -6,7 +6,7 @@
 
 
     def operatingsystems() {
-    return ['ubuntu-jammy', 'ubuntu-jammy-arm']
+    return ['ubuntu-jammy']
 }
 
     pipeline {
