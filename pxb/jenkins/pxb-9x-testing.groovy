@@ -46,7 +46,7 @@
         )
         choice(
             choices: [
-                'ms-innovation-lts',
+                'ms_innovation_lts',
                 'ps-9x-innovation'
             ],
             description: 'Server to test',
