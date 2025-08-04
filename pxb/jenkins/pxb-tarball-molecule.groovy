@@ -44,12 +44,12 @@ pipeline {
     //  description: 'Repository to install PXB from'
     //)
     string(
-      defaultValue: 'master',
+      defaultValue: 'grishma123-eng',
       description: 'Branch for package-testing repository',
       name: 'TESTING_BRANCH'
     )
     string(
-      defaultValue: 'Percona-QA',
+      defaultValue: 'pxb_tarball',
       description: 'Git account for package-testing repository',
       name: 'TESTING_GIT_ACCOUNT'
     )
