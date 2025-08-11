@@ -1,5 +1,5 @@
 - job:
-    name: ps-package-testing-molecule
+    name: ps-package-testing-molecule-test
     project-type: pipeline
     description: |
         Do not edit this job through the web!
