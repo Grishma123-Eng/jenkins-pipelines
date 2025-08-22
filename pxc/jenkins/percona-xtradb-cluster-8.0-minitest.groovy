@@ -3,6 +3,8 @@ library changelog: false, identifier: 'lib@pxc_test', retriever: modernSCM([
     remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
+import groovy.transform.Field   
+
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
       sh """
@@ -109,6 +111,8 @@ def package_tests_PXC80(def nodes) {
     }
     parallel stepsForParallel
 }
+
+
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
