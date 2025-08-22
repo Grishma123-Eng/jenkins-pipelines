@@ -1,0 +1,15 @@
+- job:
+    name: pxc80-autobuild-RELEASE-minitest
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
+            branches:
+            - 'pxc_minitest'
+            wipe-workspace: false
+      lightweight-checkout: true
+      script-path: pxc/jenkins/percona-xtradb-cluster-8.0-minitest.groovy
+
