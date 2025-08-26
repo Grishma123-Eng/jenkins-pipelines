@@ -11,4 +11,4 @@
             - 'add-minitest-support-1'
             wipe-workspace: false
       lightweight-checkout: true
-      script-path: ps/jenkins/percona-server-for-mysql-8.0-debug.groovy
+      script-path: ps/jenkins/percona-server-for-mysql-8.0-test.groovy
