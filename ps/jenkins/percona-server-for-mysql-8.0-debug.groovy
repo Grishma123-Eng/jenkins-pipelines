@@ -1,5 +1,5 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@pxc_minitest', retriever: modernSCM([
+library changelog: false, identifier: 'lib@@add-minitest-support-1', retriever: modernSCM([
     $class: 'GitSCMSource',
     remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
@@ -139,7 +139,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-        //slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+     //   slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     }
 }
 
@@ -162,7 +162,7 @@ def runPlaybook(def nodeName) {
             def playbook_path = "package-testing/playbooks/${playbook}"
             sh '''
                 set -xe
-                git clone --depth 1 https://github.com/Percona-QA/package-testing
+                git clone --depth 1 https://github.com/grishma123-eng/package-testing
             '''
             def exitCode = sh(
                 script: """
@@ -410,16 +410,16 @@ parameters {
                label 'min-focal-x64'
             }
             steps {
-               // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+          //      slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
-                script {
+         /*       script {
                             if (env.FIPSMODE == 'YES') {
                                 buildStage("none", "--get_sources=1 --enable_fipsmode=1")
                             } else {
                                 buildStage("none", "--get_sources=1")
                             }
-                       }
+                       }*/
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "UPLOAD" test/percona-server-8.0.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -430,15 +430,16 @@ parameters {
                    cat awsUploadPath
                 '''
                 script {
-                AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                     echo "Helloooo"
+              //  AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-                pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
+       //        pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
+         //       uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
-      /*  stage('Build PS generic source packages') {
+  /*      stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -1134,20 +1135,18 @@ parameters {
                     }
                 }
             }
-        }*/
-
+        } */
     }
     post {
         success {
           /*  script {
-                echo "Hello"
                 if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
             } */
-         //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
+        //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             unstash 'properties'
             script {
                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
@@ -1176,7 +1175,7 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout master
+                        git checkout testing-branch 
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
@@ -1208,7 +1207,7 @@ parameters {
                              try {
                                 package_tests_ps80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
-                             //   slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                          //      slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
@@ -1221,7 +1220,7 @@ parameters {
                                     -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                                     """ 
                                     }
-                           //     slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                         //       slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             } catch (err) {
                                     echo " Minitests block failed: ${err}"
                                     currentBuild.result = 'FAILURE'
@@ -1242,13 +1241,13 @@ parameters {
                 }    
                         else{
                             error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                        //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                    //        slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
                         }
                     }
                         deleteDir()
         }
-       /* failure {
-          //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
+    /*    failure {
+            slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
@@ -1258,7 +1257,7 @@ parameters {
             sh '''
                 sudo rm -rf ./*
             '''
-       /*     script {
+      /*      script {
                 if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 } else {
