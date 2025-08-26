@@ -413,6 +413,7 @@ parameters {
           //      slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
+                buildStage("none", "--get_sources=1")
          /*       script {
                             if (env.FIPSMODE == 'YES') {
                                 buildStage("none", "--get_sources=1 --enable_fipsmode=1")
