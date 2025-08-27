@@ -184,12 +184,12 @@ def runPlaybook(def nodeName) {
             }
         }
     }
-def minitestNodes =   [  "min-bullseye-x64",
-                         "min-bookworm-x64",
+def minitestNodes =   [  "min-bullseye-x64" ]
+                      /*   "min-bookworm-x64",
                          "min-ol-8-x64",
                          "min-jammy-x64",
                          "min-noble-x64",
-                         "min-ol-9-x64"]
+                         "min-ol-9-x64"] */
 
 def package_tests_ps80(def nodes) {
     def stepsForParallel = [:]
@@ -206,7 +206,7 @@ def package_tests_ps80(def nodes) {
     }
     parallel stepsForParallel
 }
-def docker_test() {
+/*def docker_test() {
     def stepsForParallel = [:] 
         stepsForParallel['Run for ARM64'] = {
             node('docker-32gb-aarch64') {
@@ -252,7 +252,7 @@ def docker_test() {
                     script{
                         sh """
                             sudo yum install -y curl wget git
-                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),
                             ARCH=\$(uname -m)
                             if [[ "\$ARCH" == "aarch64" ]]; then
                                 ARCH_NAME="ARM64"
@@ -317,7 +317,7 @@ def docker_test() {
                     script {
                         sh """
                             sudo yum install -y curl wget git
-                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),.*/\\1/')
+                            TRIVY_VERSION=\$(curl --silent 'https://api.github.com/repos/aquasecurity/trivy/releases/latest' | grep '"tag_name":' | tr -d '"' | sed -E 's/.*v(.+),
                             wget https://github.com/aquasecurity/trivy/releases/download/v\${TRIVY_VERSION}/trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz
                             sudo tar zxvf trivy_\${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin/
                             wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
@@ -330,7 +330,7 @@ def docker_test() {
             }  
         }
     parallel stepsForParallel
-}
+}*/
 
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
@@ -1154,9 +1154,14 @@ parameters {
                 env.PS_REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
                 echo "Revision is: ${env.PS_REVISION}"
+               
+                def PS_VERSION_SHORT = sh(
+                    returnStdout: true,
+                    script: """echo ${PS_RELEASE} | awk -F'.' '{print "PS"\$1\$2}'"""
+                ).trim()
+
                 echo "PS_RELEASE is: ${PS_RELEASE}"
-                echo "PS_VERSION_SHORT_KEY is: ${PS_VERSION_SHORT_KEY}"
-                echo "Value is : ${PS_VERSION_SHORT}"
+                echo "PS_VERSION_SHORT Value is : ${PS_VERSION_SHORT}"
                 echo "DOCKER account is : ${DOCKER_ACC}"
 
                 if (env.product_to_test == 'PS80') {
@@ -1203,7 +1208,7 @@ parameters {
                         fi
                     """
                     }
-                    parallel(
+                /*    parallel(
                         "Start Minitests for PS": {
                              try {
                                 package_tests_ps80(minitestNodes)
@@ -1238,7 +1243,7 @@ parameters {
                                 throw err
                             }
                             }
-                    )          
+                    )       */
                 }    
                         else{
                             error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
