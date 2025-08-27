@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@master', retriever: modernSCM([
+library changelog: false, identifier: 'lib@minitest_work', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -139,7 +139,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+     //   slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     }
 }
 
@@ -162,7 +162,7 @@ def runPlaybook(def nodeName) {
             def playbook_path = "package-testing/playbooks/${playbook}"
             sh '''
                 set -xe
-                git clone --depth 1 https://github.com/Percona-QA/package-testing
+                git clone --depth 1 https://github.com/grishma123-eng/package-testing
             '''
             def exitCode = sh(
                 script: """
@@ -410,16 +410,17 @@ parameters {
                label 'min-focal-x64'
             }
             steps {
-                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+          //      slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
-                script {
+                buildStage("none", "--get_sources=1")
+         /*       script {
                             if (env.FIPSMODE == 'YES') {
                                 buildStage("none", "--get_sources=1 --enable_fipsmode=1")
                             } else {
                                 buildStage("none", "--get_sources=1")
                             }
-                       }
+                       }*/
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "UPLOAD" test/percona-server-8.0.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -430,15 +431,16 @@ parameters {
                    cat awsUploadPath
                 '''
                 script {
-                AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                     echo "Helloooo"
+              //  AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-                pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
+       //        pushArtifactFolder("source_tarball/", AWS_STASH_PATH)
+         //       uploadTarballfromAWS("source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
-        stage('Build PS generic source packages') {
+  /*      stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -1134,147 +1136,18 @@ parameters {
                     }
                 }
             }
-        }
-        stage('Build docker containers') {
-            agent {
-                label 'min-focal-x64'
-            }
-            steps {
-                script {
-                    if (env.FIPSMODE == 'YES') {
-                        echo "The step is skipped"
-                    } else {
-                        echo "====> Build docker container"
-                        cleanUpWS()
-                        installCli("deb")
-                        sh '''
-                           sleep 1200
-                        '''
-                        unstash 'properties'
-                        sh '''
-                            PS_RELEASE=$(echo ${BRANCH} | sed 's/release-//g')
-                            PS_MAJOR_RELEASE=$(echo ${BRANCH} | sed "s/release-//g" | sed "s/\\.//g" | awk '{print substr($0, 0, 2)}')
-                            if [ ${PS_MAJOR_RELEASE} != "80" ]; then
-                                MYSQL_SHELL_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 6)}' | sed 's/-//g')
-                                MYSQL_ROUTER_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 6)}' | sed 's/-//g')
-                            else
-                                MYSQL_SHELL_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 7)}' | sed 's/-//g')
-                                MYSQL_ROUTER_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 7)}' | sed 's/-//g')
-                            fi
-                            sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-                            sudo apt-get install -y docker.io
-                            sudo systemctl status docker
-                            sudo apt-get install -y qemu binfmt-support qemu-user-static
-                            sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-                            git clone https://github.com/percona/percona-docker
-                            cd percona-docker/percona-server-8.0
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile
-                            if [ ${PS_MAJOR_RELEASE} != "80" ]; then
-                                if [ ${PS_MAJOR_RELEASE} = "84" ]; then
-                                    sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile
-                                else
-                                    sed -i "s/percona-release enable ps-80/percona-release enable ps-8x-innovation/g" Dockerfile
-                                fi
-                                sed -i "s/percona-release enable mysql-shell/PS_REPO=\"testing\";percona-release enable mysql-shell/g" Dockerfile
-                            fi
-                            sed -i "s/ENV PS_VERSION.*/ENV PS_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_TELEMETRY_VERSION.*/ENV PS_TELEMETRY_VERSION ${PS_RELEASE}-${RPM_RELEASE}/g" Dockerfile.aarch64
-                            sed -i "s/ENV PS_REPO .*/ENV PS_REPO testing/g" Dockerfile.aarch64
-                            if [ ${PS_MAJOR_RELEASE} != "80" ]; then
-                                if [ ${PS_MAJOR_RELEASE} = "84" ]; then
-                                    sed -i "s/percona-release enable ps-80/percona-release enable ps-84-lts/g" Dockerfile.aarch64
-                                else
-                                    sed -i "s/percona-release enable ps-80/percona-release enable ps-8x-innovation/g" Dockerfile.aarch64
-                                fi
-                                sed -i "s/percona-release enable mysql-shell/PS_REPO=\"testing\";percona-release enable mysql-shell/g" Dockerfile.aarch64
-                            fi
-                            sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 --platform="linux/amd64" .
-                            sudo docker build -t perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 --platform="linux/arm64" -f Dockerfile.aarch64 .
-                            cd ../mysql-router
-                            sed -i "s/ENV ROUTE_VERSION.*/ENV ROUTE_VERSION ${PS_RELEASE}.${RPM_RELEASE}/g" Dockerfile
-                            sed -i "s/ENV MYSQL_SHELL_VERSION.*/ENV MYSQL_SHELL_VERSION ${MYSQL_SHELL_RELEASE}-${RPM_RELEASE}/g" Dockerfile
-                            if [ ${PS_MAJOR_RELEASE} != "80" ]; then
-                                if [ ${PS_MAJOR_RELEASE} = "84" ]; then
-                                    sed -i "s/percona-release enable ps-80 testing/percona-release enable ps-84-lts testing/g" Dockerfile
-                                else
-                                    sed -i "s/percona-release enable ps-80 testing/percona-release enable ps-8x-innovation testing/g" Dockerfile
-                                fi
-                            fi
-                            sudo docker build -t perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}-amd64 --platform="linux/amd64" .
-                            sudo docker build -t perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}-arm64 --platform="linux/arm64" .
-                            sudo docker tag perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}-amd64 perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}
-                            sudo docker images
-                        '''
-                        withCredentials([
-                        usernamePassword(credentialsId: 'hub.docker.com',
-                        passwordVariable: 'PASS',
-                        usernameVariable: 'USER'
-                        )]) {
-                        sh '''
-                            echo "${PASS}" | sudo docker login -u "${USER}" --password-stdin
-                            PS_RELEASE=$(echo ${BRANCH} | sed 's/release-//g')
-                            PS_MAJOR_RELEASE=$(echo ${BRANCH} | sed "s/release-//g" | awk '{print substr($0, 0, 3)}')
-                            if [ ${PS_MAJOR_RELEASE} != "80" ]; then
-                                MYSQL_ROUTER_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 6)}' | sed 's/-//g')
-                            else
-                                MYSQL_ROUTER_RELEASE=$(echo ${BRANCH} | sed 's/release-//g' | awk '{print substr($0, 0, 7)}' | sed 's/-//g')
-                            fi
-                            sudo docker tag perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 perconalab/percona-server:${PS_RELEASE}-amd64
-                            sudo docker push perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64
-                            sudo docker push perconalab/percona-server:${PS_RELEASE}-amd64
-                            sudo docker tag perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 perconalab/percona-server:${PS_RELEASE}-arm64
-                            sudo docker push perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64
-                            sudo docker push perconalab/percona-server:${PS_RELEASE}-arm64
-                            sudo docker tag perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE} perconalab/percona-mysql-router:${PS_MAJOR_RELEASE}
-                            sudo docker push perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}-amd64
-                            sudo docker push perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}-arm64
-                            sudo docker push perconalab/percona-mysql-router:${MYSQL_ROUTER_RELEASE}
-                            sudo docker push perconalab/percona-mysql-router:${PS_MAJOR_RELEASE}
-                       '''
-                       }
-                       sh '''
-                           PS_RELEASE=$(echo ${BRANCH} | sed 's/release-//g')
-                           PS_MAJOR_RELEASE=$(echo ${BRANCH} | sed "s/release-//g" | sed "s/\\.//g" | awk '{print substr($0, 0, 2)}')
-                           sudo docker manifest create perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE} \
-                               perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 \
-                               perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64
-                           sudo docker manifest annotate perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE} perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-arm64 --os linux --arch arm64 --variant v8
-                           sudo docker manifest annotate perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE} perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}-amd64 --os linux --arch amd64
-                           sudo docker manifest inspect perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}
-                       '''
-                       withCredentials([
-                       usernamePassword(credentialsId: 'hub.docker.com',
-                       passwordVariable: 'PASS',
-                       usernameVariable: 'USER'
-                       )]) {
-                       sh '''
-                           PS_RELEASE=$(echo ${BRANCH} | sed 's/release-//g')
-                           PS_MAJOR_RELEASE=$(echo ${BRANCH} | sed "s/release-//g" | sed "s/\\.//g" | awk '{print substr($0, 0, 2)}')
-                           echo "${PASS}" | sudo docker login -u "${USER}" --password-stdin
-                           PS_RELEASE=$(echo ${BRANCH} | sed 's/release-//g')
-                           sudo docker manifest push perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}
-                           sudo docker buildx imagetools create -t perconalab/percona-server:${PS_RELEASE} perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE}
-                           sudo docker buildx imagetools create -t perconalab/percona-server:${PS_MAJOR_RELEASE} perconalab/percona-server:${PS_RELEASE}.${RPM_RELEASE} 
-                       '''
-                       }
-                    }
-                }
-            }
-       }
+        } */
     }
     post {
         success {
-            script {
+          /*  script {
                 if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
-            } 
-            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
+            } */
+        //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             unstash 'properties'
             script {
                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
@@ -1303,7 +1176,7 @@ parameters {
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout master
+                        git checkout testing-branch 
                         echo "${PS_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
@@ -1335,7 +1208,7 @@ parameters {
                              try {
                                 package_tests_ps80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
-                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                          //      slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'ps-package-testing-molecule', propagate: false, wait: false, parameters: [string(name: 'product_to_test', value: "${product_to_test}"),string(name: 'install_repo', value: "testing"),string(name: 'action_to_test', value: "install"),string(name: 'check_warnings', value: "yes"),string(name: 'install_mysql_shell', value: "no")]
                                 echo "Trigger PMM_PS Github Actions Workflow"
@@ -1348,7 +1221,7 @@ parameters {
                                     -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
                                     """ 
                                     }
-                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                         //       slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             } catch (err) {
                                     echo " Minitests block failed: ${err}"
                                     currentBuild.result = 'FAILURE'
@@ -1369,29 +1242,29 @@ parameters {
                 }    
                         else{
                             error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                    //        slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
                         }
                     }
                         deleteDir()
         }
-        failure {
+    /*    failure {
             slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: build failed for ${BRANCH} - [${BUILD_URL}]")
             script {
                 currentBuild.description = "Built on ${BRANCH}"
             }
             deleteDir()
-        }
+        }*/
         always {
             sh '''
                 sudo rm -rf ./*
             '''
-            script {
+      /*      script {
                 if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
                 }
-            }
+            }*/
             deleteDir()
         }
     }
