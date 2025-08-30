@@ -1149,21 +1149,18 @@ parameters {
             } */
         //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Triggering Builds for Package Testing for ${BRANCH} - [${BUILD_URL}]")
             unstash 'properties'
+
             script {
                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
                 env.PS_REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
                 sh "cat test/percona-server-8.0.properties"
-                echo "Revision is: ${env.PS_REVISION}"
-               
-                def PS_VERSION_SHORT = sh(
-                    returnStdout: true,
-                    script: """echo ${PS_RELEASE} | awk -F'.' '{print "PS"\$1\$2}'"""
-                ).trim()
-
-                echo "PS_RELEASE is: ${PS_RELEASE}"
-                echo "PS_VERSION_SHORT Value is : ${PS_VERSION_SHORT}"
-                echo "DOCKER account is : ${DOCKER_ACC}"
-
+                env.PS_RELEASE = sh(script: "echo ${BRANCH} | sed 's/release-//g'", returnStdout: true).trim()
+                echo "PS_RELEASE: ${env.PS_RELEASE}"
+                env.PS_VERSION_SHORT_KEY = "${env.PS_RELEASE}".split('\\.')[0..1].join('.')
+                echo "PS_VERSION_SHORT_KEY: ${env.PS_VERSION_SHORT_KEY}"
+                env.PS_VERSION_SHORT = "PS${env.PS_VERSION_SHORT_KEY.replace('.', '')}"
+                echo "PS_VERSION_SHORT: ${env.PS_VERSION_SHORT}"
+                
                 if (env.product_to_test == 'PS80') {
                     echo "Running PS80-specific steps"
                 } else if (env.product_to_test == 'PS84') {
