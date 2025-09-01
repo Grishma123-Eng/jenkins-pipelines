@@ -37,6 +37,14 @@ def call(String INSTANCE_TYPE, String SPOT_PRICE, VOLUME) {
                               "Name=group-name,Values=SSH" \
                     --query 'SecurityGroups[].GroupId'
             )
+            export SG3=\$(
+                aws ec2 describe-security-groups \
+                    --region us-east-2 \
+                    --output text \
+                    --filters "Name=tag:aws:cloudformation:stack-name,Values=pmm-staging" \
+                              "Name=group-name,Values=NOMAD" \
+                    --query 'SecurityGroups[].GroupId'
+            )
 
             PRICE_MULTIPLIER=0
             while true
@@ -53,8 +61,7 @@ def call(String INSTANCE_TYPE, String SPOT_PRICE, VOLUME) {
                     set -x
 
                     # increase price by 15% each time
-                    # TODO: Temporarily increasing the price by 30% due to the holiday season.
-                    export SPOT_PRICE=\$(bc -l <<< "scale=8; \$SPOT_PRICE + ((\$SPOT_PRICE / 100) * (30 * \$PRICE_MULTIPLIER))" | sed 's/^\\./0./')
+                    export SPOT_PRICE=\$(bc -l <<< "scale=8; \$SPOT_PRICE + ((\$SPOT_PRICE / 100) * (15 * \$PRICE_MULTIPLIER))" | sed 's/^\\./0./')
                     echo SET PRICE: \$SPOT_PRICE
                     echo \$SPOT_PRICE > SPOT_PRICE
                 else
@@ -88,7 +95,8 @@ def call(String INSTANCE_TYPE, String SPOT_PRICE, VOLUME) {
                         },
                         "SecurityGroupIds": [
                             "security-group-id-1",
-                            "security-group-id-2"
+                            "security-group-id-2",
+                            "security-group-id-3"
                         ],
                         "SubnetId": "subnet-id"
                     },
@@ -98,6 +106,7 @@ def call(String INSTANCE_TYPE, String SPOT_PRICE, VOLUME) {
                     | sed -e "s/subnet-id/\${SUBNET}/" \
                     | sed -e "s/security-group-id-1/\${SG1}/" \
                     | sed -e "s/security-group-id-2/\${SG2}/" \
+                    | sed -e "s/security-group-id-3/\${SG3}/" \
                     | sed -e "s/SPOT_PRICE/\${SPOT_PRICE}/" \
                     | sed -e "s/INSTANCE_TYPE/\${INSTANCE_TYPE}/" \
                     | sed -e "s/VOLUME/\${VOLUME}/" \

@@ -3,12 +3,13 @@ library changelog: false, identifier: 'lib@master', retriever: modernSCM([
     remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
 ]) _
 
-void runStaging(String DOCKER_VERSION, CLIENTS) {
+void runStaging(String DOCKER_VERSION, ADMIN_PASSWORD, CLIENTS) {
     stagingJob = build job: 'pmm3-aws-staging-start', parameters: [
         string(name: 'DOCKER_VERSION', value: DOCKER_VERSION),
         string(name: 'CLIENT_VERSION', value: '3-dev-latest'),
-        string(name: 'DOCKER_ENV_VARIABLE', value: '-e PMM_ENABLE_TELEMETRY=false -e PMM_DATA_RETENTION=48h -e PMM_DEV_PERCONA_PLATFORM_ADDRESS=https://check-dev.percona.com:443 -e PMM_DEV_PERCONA_PLATFORM_PUBLIC_KEY=RWTg+ZmCCjt7O8eWeAmTLAqW+1ozUbpRSKSwNTmO+exlS5KEIPYWuYdX'),
+        string(name: 'DOCKER_ENV_VARIABLE', value: '-e PMM_ENABLE_TELEMETRY=false -e PMM_DATA_RETENTION=48h -e PMM_DEV_PERCONA_PLATFORM_ADDRESS=https://check-dev.percona.com:443 -e PMM_DEV_PERCONA_PLATFORM_PUBLIC_KEY=RWTg+ZmCCjt7O8eWeAmTLAqW+1ozUbpRSKSwNTmO+exlS5KEIPYWuYdX -e PMM_ENABLE_NOMAD=1'),
         string(name: 'CLIENTS', value: CLIENTS),
+        string(name: 'ADMIN_PASSWORD', value: ADMIN_PASSWORD),
         string(name: 'NOTIFY', value: 'false'),
         string(name: 'DAYS', value: '1')
     ]
@@ -28,9 +29,9 @@ void destroyStaging(IP) {
 void setup_rhel_package_tests()
 {
     sh '''
-        sudo yum install -y epel-release
-        sudo yum -y update
-        sudo yum install -y ansible-core git wget
+        sudo dnf install -y epel-release
+        sudo dnf -y update
+        sudo dnf install -y ansible-core git wget dpkg
     '''
 }
 
@@ -61,15 +62,17 @@ void run_package_tests(String GIT_BRANCH, String TESTS, String INSTALL_REPO)
     git poll: false, branch: GIT_BRANCH, url: 'https://github.com/Percona-QA/package-testing'
     sh '''
         export install_repo=\${INSTALL_REPO}
+        export TARBALL_LINK=\${TARBALL}
         git clone https://github.com/Percona-QA/ppg-testing
         ansible-playbook \
+        -vvv \
         --connection=local \
         --inventory 127.0.0.1, \
         --limit 127.0.0.1 playbooks/\${TESTS}.yml
     '''
 }
 
-def latestVersion = pmmVersion()
+def latestVersion = pmmVersion('v3')[0]
 
 pipeline {
     agent {
@@ -97,14 +100,26 @@ pipeline {
             name: 'PMM_VERSION',
             trim: true)
         string(
-            defaultValue: 'pmm-client',
-            description: 'Name of Playbook? ex: pmm-client_integration, pmm-client_integration_custom_path',
+            defaultValue: 'pmm3-client_integration',
+            description: 'Name of Playbook? ex: pmm3-client_integration, pmm3-client_integration_custom_path',
             name: 'TESTS',
             trim: true)
         choice(
-            choices: ['experimental', 'testing', 'main', 'pmm-client-main'],
+            choices: ['experimental', 'testing', 'release'],
             description: 'Enable Repo for Client Nodes',
             name: 'INSTALL_REPO')
+        string(
+            defaultValue: '',
+            description: 'PMM Client tarball link or FB-code',
+            name: 'TARBALL')
+        string(
+            defaultValue: 'pmm3admin!',
+            description: 'Password for pmm server admin user',
+            name: 'ADMIN_PASSWORD')
+        string(
+            defaultValue: '--database ps',
+            description: 'Clients to setup pmm server with',
+            name: 'CLIENTS')
         choice(
             choices: ['auto', 'push', 'pull'],
             description: 'Select the Metrics Mode for Client',
@@ -116,7 +131,17 @@ pipeline {
     stages {
         stage('Setup Server Instance') {
             steps {
-                runStaging(DOCKER_VERSION, '--database ps=5.7,QUERY_SOURCE=perfschema')
+                runStaging(DOCKER_VERSION, ADMIN_PASSWORD, CLIENTS)
+                script {
+                    def PUBLIC_IP = sh(script: "curl -s ifconfig.me", returnStdout: true).trim()
+                    echo "Public IP: ${VM_IP}"
+                     sh """
+                        curl --location --request PUT "http://${VM_IP}/v1/server/settings" \
+                        --header 'Content-Type: application/json' \
+                        --user admin:${ADMIN_PASSWORD} \
+                        --data "{\\\"pmm_public_address\\\": \\\"${VM_IP}\\\"}"
+                     """
+                }
             }
         }
         stage('Execute Package Tests') {
@@ -149,40 +174,12 @@ pipeline {
                         }
                     }
                 }
-                stage('focal-arm64') {
-                    agent {
-                        label 'min-focal-arm64'
-                    }
-                    steps{
-                        setup_ubuntu_package_tests()
-                        run_package_tests(GIT_BRANCH, TESTS, INSTALL_REPO)
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
                 stage('jammy-arm64') {
                     agent {
                         label 'min-jammy-arm64'
                     }
                     steps{
                         setup_ubuntu_package_tests()
-                        run_package_tests(GIT_BRANCH, TESTS, INSTALL_REPO)
-                    }
-                    post {
-                        always {
-                            deleteDir()
-                        }
-                    }
-                }
-                stage('bullseye-arm64') {
-                    agent {
-                        label 'min-bullseye-arm64'
-                    }
-                    steps{
-                        setup_debian_package_tests()
                         run_package_tests(GIT_BRANCH, TESTS, INSTALL_REPO)
                     }
                     post {

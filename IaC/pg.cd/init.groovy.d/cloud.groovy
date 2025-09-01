@@ -17,8 +17,8 @@ logger.info("Cloud init started")
 Jenkins jenkins = Jenkins.getInstance()
 
 netMap = [:]
-netMap['eu-central-1b'] = 'subnet-085deaca8c1c59a4f'
-netMap['eu-central-1c'] = 'subnet-0643c0784b4e3cedd'
+netMap['eu-central-1b'] = 'subnet-0fad4db6fdd8025b6'
+netMap['eu-central-1c'] = 'subnet-0802c1d4746b8c35a'
 
 imageMap = [:]
 imageMap['eu-central-1a.micro-amazon'] = 'ami-01fd08d7b0955d6d5'
@@ -38,8 +38,8 @@ imageMap['eu-central-1b.min-ol-9-x64'] = imageMap['eu-central-1a.min-ol-9-x64']
 imageMap['eu-central-1c.min-ol-9-x64'] = imageMap['eu-central-1a.min-ol-9-x64']
 
 priceMap = [:]
-priceMap['c5.large']     = '0.05' // type=c5.large, vCPU=2, memory=4GiB, saving=49%, interruption='<5%', price=0.053400
-priceMap['i3en.2xlarge'] = '0.40' // type=i3en.2xlarge, vCPU=8, memory=64GiB, saving=70%, interruption='<5%', price=0.324000
+priceMap['c5.large']     = '0.08' // type=c5.large, vCPU=2, memory=4GiB, saving=49%, interruption='<5%', price=0.053400
+priceMap['d3.2xlarge']   = '0.47' // type=d3.2xlarge, vCPU=8, memory=64GiB, saving=70%, interruption='<5%', price=0.324000
 
 userMap = [:]
 userMap['micro-amazon']     = 'ec2-user'
@@ -88,13 +88,13 @@ initMap['min-ol-9-x64']     = initMap['micro-amazon']
 
 capMap = [:]
 capMap['c5.large']     = '20'
-capMap['i3en.2xlarge'] = '40'
+capMap['d3.2xlarge']   = '40'
 
 typeMap = [:]
 typeMap['micro-amazon']     = 'c5.large'
 typeMap['min-centos-7-x64'] = 'c5.large'
 typeMap['min-ol-8-x64']     = 'c5.large'
-typeMap['min-ol-9-x64']     = 'i3en.2xlarge'
+typeMap['min-ol-9-x64']     = 'd3.2xlarge'
 
 execMap = [:]
 execMap['micro-amazon']     = '30'

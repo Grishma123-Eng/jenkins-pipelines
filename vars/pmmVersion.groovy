@@ -66,6 +66,15 @@ def call(String type='dev-latest') {
   List<String> ovfVersions = versionsList[-5..-1]
   List<String> dbaasVersions = versionsList[-5..-1]
 
+  HashMap<String, String> v3Versions = [
+    '3.0.0': 'ami-030945ace2b07eb7b',
+    '3.1.0': 'ami-0a447a463e5b2d547',
+    '3.2.0': 'ami-0534d0b754cab462d',
+    '3.3.0': 'ami-0569db88919e78ee2',
+    '3.3.1': 'ami-009c9a577432158a3',
+  ]
+  List<String> v3 = v3Versions.keySet() as List<String>;
+
   switch(type) {
     case 'dev-latest':
       def latestVersion = httpRequest "https://raw.githubusercontent.com/Percona-Lab/pmm-submodules/PMM-2.0/VERSION"
@@ -88,5 +97,9 @@ def call(String type='dev-latest') {
       return ovfVersions
     case 'dbaas':
       return dbaasVersions
+    case 'v3':
+      return v3
+    case 'v3-ami':
+      return v3Versions
   }
 }
