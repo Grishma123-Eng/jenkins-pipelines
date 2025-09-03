@@ -78,7 +78,7 @@
             stage('Checkout') {
                 steps {
                     deleteDir()
-                    git poll: false, branch: "add-ps-90-pt-support", url: "https://github.com/Grishma123-Eng/package-testing.git"
+                    git poll: false, branch: "ps-9x", url: "https://github.com/Grishma123-Eng/package-testing.git"
                 }
             }
 
