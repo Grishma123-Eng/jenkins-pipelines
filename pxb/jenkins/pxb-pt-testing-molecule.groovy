@@ -1,7 +1,7 @@
 
-    library changelog: false, identifier: "lib@master", retriever: modernSCM([
+    library changelog: false, identifier: "lib@pxb-work", retriever: modernSCM([
         $class: 'GitSCMSource',
-        remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+        remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
     ])
 
     pipeline {
@@ -19,8 +19,8 @@
     }
     parameters {
         choice(
-            choices: ['pxb_80', 'pxb_innovation_lts', 'pxb_84'],
-            description: 'Choose the product version to test: PXB8.0, PXB8.4 OR pxb_innovation_lts',
+            choices: ['pxb_80', 'pxb_innovation_lts', 'pxb_84' , 'pxb_9x'],
+            description: 'Choose the product version to test: PXB8.0, PXB8.4 , PXB_9X OR pxb_innovation_lts',
             name: 'product_to_test'
         )
         choice(
@@ -122,9 +122,12 @@
                                         }
                                 }
                                 else {
-                                        moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
+                                    if (product_to_test == "pxb_9x") {
+                                     moleculeParallelTestPXB(pxb9xPackageTesting(), "molecule/pxb-package-testing/")
+                                 }  else {
+                                    moleculeParallelTestPXB(pxbPackageTesting(), "molecule/pxb-package-testing/")
+                                 }
                                 }
-
                                 }
 
                             }
