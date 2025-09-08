@@ -2,7 +2,7 @@
 
     library changelog: false, identifier: "lib@pxb-work", retriever: modernSCM([
         $class: 'GitSCMSource',
-        remote: 'https://github.com/grisham123-eng/jenkins-pipelines.git'
+        remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
     ])
 
     pipeline {
