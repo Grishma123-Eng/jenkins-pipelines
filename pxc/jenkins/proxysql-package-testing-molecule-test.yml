@@ -15,4 +15,4 @@
                     - 'pxb-work'
                 wipe-workspace: true
         lightweight-checkout: true
-        script-path: ps/jenkins/proxysql-package-testing-molecule-test.groovy
+        script-path: pxc/jenkins/proxysql-package-testing-molecule-test.groovy
