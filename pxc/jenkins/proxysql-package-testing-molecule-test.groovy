@@ -107,7 +107,7 @@
 
                         def envMap = loadEnvFile('.env.ENV_VARS')
                         withEnv(envMap) {
-                            moleculeParallelTestPS(psPackageTesting(), "molecule/proxysql/")
+                            moleculeParallelTestPS(proxysqlPackageTesting(), "molecule/proxysql/")
                         }
                     }
                 }
@@ -129,6 +129,34 @@ def installMolecule() {
             python3 -m pip install --upgrade PyYaml==5.3.1 molecule==3.3.0 testinfra pytest molecule-ec2==0.3 molecule[ansible] "ansible<10.0.0" "ansible-lint>=5.1.1,<6.0.0" boto3 boto
         """
 }
+
+def proxysqlPackageTesting() {
+    // Define list of OSes you want to test against
+    def osList = [
+        'debian-11',
+        'debian-11-arm' ,
+        'debian-12',
+        'debian-12-arm' ,
+         'oracle-8', 
+         'oracle-9',
+          'rhel-9', 
+          'rhel-8-arm', 
+          'rhel-9-arm',
+          'rhel-10',
+          'rhel-10-arm',
+          'amazon-linux-2', 
+          'ubuntu-jammy',
+         'ubuntu-jammy-arm',
+          'ubuntu-focal', 
+          'ubuntu-focal-arm', 
+          'ubuntu-noble', 
+          'ubuntu-noble-arm'
+    ]
+    return osList.collect { os -> 
+        [ os: os ]  // if moleculeParallelTestPS expects map
+    }
+}
+
 
 def loadEnvFile(envFilePath) {
     def envMap = []
