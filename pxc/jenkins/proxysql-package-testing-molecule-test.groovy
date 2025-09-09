@@ -132,7 +132,7 @@ def installMolecule() {
 
 def proxysqlPackageTesting() {
     // Define list of OSes you want to test against
-    def osList = [
+    return [
         'debian-11',
         'debian-11-arm' ,
         'debian-12',
@@ -152,9 +152,6 @@ def proxysqlPackageTesting() {
           'ubuntu-noble', 
           'ubuntu-noble-arm'
     ]
-    return osList.collect { os -> 
-        [ os: os ]  // if moleculeParallelTestPS expects map
-    }
 }
 
 
