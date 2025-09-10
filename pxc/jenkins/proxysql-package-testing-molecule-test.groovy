@@ -144,7 +144,6 @@ def proxysqlPackageTesting() {
           'rhel-9-arm',
           'rhel-10',
           'rhel-10-arm',
-          'amazon-linux-2', 
           'ubuntu-jammy',
          'ubuntu-jammy-arm',
           'ubuntu-focal', 
