@@ -94,7 +94,7 @@
                     }
                 }
             }
-            stage('RUN TESTS') {
+             stage('RUN TESTS') {
                         steps {
                             script {
                                 if (action_to_test == 'install') {
@@ -109,7 +109,12 @@
 
                                 def envMap = loadEnvFile('.env.ENV_VARS')
                                 withEnv(envMap) {
+                                    if (product_to_test == "ps_lts_innovation") {
+                                    moleculeParallelTestPS(ps90PackageTesting.groovy(), "molecule/ps/")
+                                  } 
+                                    else {
                                     moleculeParallelTestPS(psPackageTesting(), "molecule/ps/")
+                                }
                                 }
 
                             }
