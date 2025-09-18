@@ -216,6 +216,13 @@ def installMolecule() {
         """
 }
 
+def ps90PackageTesting() {
+    return [
+        'ubuntu-noble', 'ubuntu-noble-arm'
+    ]
+}
+
+
 def loadEnvFile(envFilePath) {
     def envMap = []
     def envFileContent = readFile(file: envFilePath).trim().split('\n')
