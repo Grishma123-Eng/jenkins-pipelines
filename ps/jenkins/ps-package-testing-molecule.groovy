@@ -1,8 +1,8 @@
 
 
-    library changelog: false, identifier: "lib@ps9x", retriever: modernSCM([
+    library changelog: false, identifier: "lib@master", retriever: modernSCM([
         $class: 'GitSCMSource',
-        remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
+        remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
     ])
 
     pipeline {
@@ -110,13 +110,12 @@
                                 def envMap = loadEnvFile('.env.ENV_VARS')
                                 withEnv(envMap) {
                                     if (product_to_test == "ps_lts_innovation") {
-                                    moleculeParallelTestPS(ps90PackageTesting.groovy(), "molecule/ps/")
+                                    moleculeParallelTestPS(ps90PackageTesting(), "molecule/ps/")
                                   } 
                                     else {
                                     moleculeParallelTestPS(psPackageTesting(), "molecule/ps/")
                                 }
                                 }
-
                             }
                         }
             }
