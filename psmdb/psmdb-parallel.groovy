@@ -107,8 +107,8 @@ pipeline {
 //            slackNotify("#mongodb_autofeed", "#FF0000", "[${JOB_NAME}]: package tests for PSMDB ${PSMDB_VERSION}, repo ${REPO}, private repo - ${GATED_BUILD} failed - [${BUILD_URL}]")
 //        }
         always {
-            println("SLEEPING")
-            sleep time: 3600, unit: 'SECONDS'
+//            println("SLEEPING")
+//            sleep time: 3600, unit: 'SECONDS'
             script {
                 moleculeParallelPostDestroy(pdmdbOperatingSystems(PSMDB_VERSION,PSMDB_VERSION,GATED_BUILD), moleculeDir)
             }
