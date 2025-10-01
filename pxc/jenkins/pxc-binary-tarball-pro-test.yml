@@ -1,0 +1,14 @@
+- job:
+    name: test-pxc-binary-tarball-pro-test
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/grishma121-eng/jenkins-pipelines.git
+            branches:
+            - 'rhe10-support'
+            wipe-workspace: true
+      lightweight-checkout: true
+      script-path: pxc/jenkins/pxc-binary-tarball-pro-test.groovy
