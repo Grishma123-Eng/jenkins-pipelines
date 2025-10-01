@@ -6,7 +6,7 @@
     pipeline-scm:
       scm:
         - git:
-            url: https://github.com/grishma121-eng/jenkins-pipelines.git
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
             branches:
             - 'rhe10-support'
             wipe-workspace: true
