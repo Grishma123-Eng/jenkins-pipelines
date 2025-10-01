@@ -596,12 +596,12 @@ pipeline {
         )
         string(
             name: 'git_repo',
-            defaultValue: "Percona-QA/package-testing",
+            defaultValue: "grishma123-eng/package-testing",
             description: 'Git repository to use for testing'
         )
         string(
             name: 'BRANCH',
-            defaultValue: 'master',
+            defaultValue: 'rhe10-support',
             description: 'Git branch to use for testing'
         )
     }
