@@ -4,7 +4,7 @@ library changelog: false, identifier: 'lib@PMM-7-add-pmm-version-340', retriever
 ]) _
 
 def pmmVersions = pmmVersion('v3')
-def latestVersion = pmmVersions[0]
+def latestVersion = pmmVersions.last()
 
 void runUpgradeJob(String PMM_UI_GIT_BRANCH, DOCKER_TAG, DOCKER_TAG_UPGRADE, CLIENT_VERSION, CLIENT_REPOSITORY, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH) {
     upgradeJob = build job: 'pmm3-upgrade-tests', parameters: [
