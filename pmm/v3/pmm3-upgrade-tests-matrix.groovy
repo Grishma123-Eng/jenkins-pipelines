@@ -4,6 +4,7 @@ library changelog: false, identifier: 'lib@PMM-7-new-pmm-version-3-4-1', retriev
 ]) _
 
 def pmmVersions = pmmVersion('v3')
+def upgradeVersions = pmmVersions[-5..-1]
 def latestVersion = pmmVersions.last();
 
 void runUpgradeJob(String PMM_UI_GIT_BRANCH, DOCKER_TAG, DOCKER_TAG_UPGRADE, CLIENT_VERSION, CLIENT_REPOSITORY, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH) {
@@ -19,20 +20,20 @@ void runUpgradeJob(String PMM_UI_GIT_BRANCH, DOCKER_TAG, DOCKER_TAG_UPGRADE, CLI
     ]
 }
 
-def generateVariants(String PMM_UI_GIT_BRANCH, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH, pmmVersions) {
+def generateVariants(String PMM_UI_GIT_BRANCH, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH, upgradeVersions) {
     def results = new HashMap<>();
     def latestVersion = PMM_SERVER_LATEST;
 
-    for (pmmVersion in pmmVersions) {
-        if(pmmVersion == latestVersion) {
+    for (upgradeVersion in upgradeVersions) {
+        if(upgradeVersion == latestVersion) {
             results.put(
-                "Run matrix upgrade tests from version: \"$pmmVersion\"",
-                generateStage(PMM_UI_GIT_BRANCH, "perconalab/pmm-server:${pmmVersion}-rc", 'perconalab/pmm-server:3-dev-latest', 'pmm3-rc', 'testing', PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH)
+                "Run matrix upgrade tests from version: \"$upgradeVersion\"",
+                generateStage(PMM_UI_GIT_BRANCH, "perconalab/pmm-server:${upgradeVersion}-rc", 'perconalab/pmm-server:3-dev-latest', 'pmm3-rc', 'testing', PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH)
             )
         } else {
             results.put(
-                "Run matrix upgrade tests from version: \"$pmmVersion\"",
-                generateStage(PMM_UI_GIT_BRANCH, 'percona/pmm-server:' + pmmVersion, "perconalab/pmm-server:${latestVersion}-rc", pmmVersion, 'release', PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH)
+                "Run matrix upgrade tests from version: \"$upgradeVersion\"",
+                generateStage(PMM_UI_GIT_BRANCH, 'percona/pmm-server:' + upgradeVersion, "perconalab/pmm-server:${latestVersion}-rc", upgradeVersion, 'release', PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH)
             )
         }
     }
@@ -42,7 +43,7 @@ def generateVariants(String PMM_UI_GIT_BRANCH, PMM_SERVER_LATEST, PMM_QA_GIT_BRA
 
 def generateStage(String PMM_UI_GIT_BRANCH, DOCKER_TAG, DOCKER_TAG_UPGRADE, CLIENT_VERSION, CLIENT_REPOSITORY, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH) {
     return {
-        stage("Run \"$pmmVersion\" upgrade tests") {
+        stage("Run \"$upgradeVersion\" upgrade tests") {
             runUpgradeJob(PMM_UI_GIT_BRANCH, DOCKER_TAG, DOCKER_TAG_UPGRADE, CLIENT_VERSION, CLIENT_REPOSITORY, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH);
         }
     }
@@ -82,7 +83,7 @@ pipeline {
         stage('UI tests Upgrade Matrix') {
             steps {
                 script {
-                    parallel generateVariants(PMM_UI_GIT_BRANCH, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH, pmmVersions)
+                    parallel generateVariants(PMM_UI_GIT_BRANCH, PMM_SERVER_LATEST, PMM_QA_GIT_BRANCH, QA_INTEGRATION_GIT_BRANCH, upgradeVersions)
                 }
             }
         }
