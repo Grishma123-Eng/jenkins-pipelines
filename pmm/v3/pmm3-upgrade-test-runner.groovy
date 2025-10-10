@@ -230,7 +230,6 @@ pipeline {
                             export PWD=$(pwd)
                             export CHROMIUM_PATH=/usr/bin/chromium
                             ansible-galaxy collection install ansible.utils
-                            docker ps -a
                         '''
                     }
                 }
