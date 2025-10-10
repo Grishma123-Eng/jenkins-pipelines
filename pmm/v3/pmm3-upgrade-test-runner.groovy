@@ -117,10 +117,6 @@ pipeline {
             defaultValue: 'v3',
             description: 'Tag/Branch for qa-integration repository',
             name: 'QA_INTEGRATION_GIT_BRANCH')
-        string(
-            defaultValue: 'admin',
-            description: "Password for PMM Server ",
-            name: 'ADMIN_PASSWORD')
     }
     options {
         skipDefaultCheckout()
@@ -135,7 +131,6 @@ pipeline {
                     println CLIENT_VERSION.trim()
                     println clientRepoAvailableVersions
                     println clientRepoAvailableVersions.contains(CLIENT_VERSION.trim())
-                    env.ADMIN_PASSWORD = params.ADMIN_PASSWORD
                     currentBuild.description = "Upgrade for PMM from ${env.DOCKER_TAG.split(":")[1]} to ${env.PMM_SERVER_LATEST}."
                 }
                 git poll: false,
@@ -214,6 +209,7 @@ pipeline {
                     env.SERVER_IP = "127.0.0.1"
                     env.PMM_UI_URL = "http://${env.SERVER_IP}/"
                     env.PMM_URL = "http://admin:admin@${env.SERVER_IP}"
+                    env.ADMIN_PASSWORD = 'admin'
                 }
             }
         }
