@@ -90,7 +90,7 @@ pipeline {
             description: 'Tag/Branch for UI Tests repository',
             name: 'PMM_UI_GIT_BRANCH')
         string(
-            defaultValue: 'percona/pmm-server:3.0.0',
+            defaultValue: "percona/pmm-server:${clientRepoAvailableVersions[-5]}",
             description: 'PMM Server Version to test for Upgrade',
             name: 'DOCKER_TAG')
         string(
@@ -98,7 +98,7 @@ pipeline {
             description: 'PMM Server Version to upgrade to, if empty docker tag will be used from version service.',
             name: 'DOCKER_TAG_UPGRADE')
         string(
-            defaultValue: '3.0.0',
+            defaultValue: clientRepoAvailableVersions[-5],
             description: 'PMM Client Version to test for Upgrade',
             name: 'CLIENT_VERSION')
         string(
@@ -135,10 +135,6 @@ pipeline {
                     println CLIENT_VERSION.trim()
                     println clientRepoAvailableVersions
                     println clientRepoAvailableVersions.contains(CLIENT_VERSION.trim())
-//                     if (!clientRepoAvailableVersions.contains(CLIENT_VERSION.trim())) {
-//                         env.CLIENT_VERSION = "https://downloads.percona.com/downloads/pmm3/${CLIENT_VERSION}/binary/tarball/pmm-client-${CLIENT_VERSION}-x86_64.tar.gz"
-//                     }
-                    println CLIENT_VERSION
                     env.ADMIN_PASSWORD = params.ADMIN_PASSWORD
                     currentBuild.description = "Upgrade for PMM from ${env.DOCKER_TAG.split(":")[1]} to ${env.PMM_SERVER_LATEST}."
                 }
