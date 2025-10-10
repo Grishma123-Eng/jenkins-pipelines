@@ -33,7 +33,7 @@ void checkClientBeforeUpgrade(String PMM_SERVER_VERSION, String CLIENT_VERSION) 
 
 def versionsList = pmmVersion('v3')
 def latestVersion = versionsList.last()
-def clientRepoAvailableVersions = versionsList[-5..-1]
+def clientRepoAvailableVersions = versionsList[-6..-1]
 
 pipeline {
     agent {
@@ -90,7 +90,7 @@ pipeline {
             description: 'Tag/Branch for UI Tests repository',
             name: 'PMM_UI_GIT_BRANCH')
         string(
-            defaultValue: "percona/pmm-server:${clientRepoAvailableVersions[-5]}",
+            defaultValue: "percona/pmm-server:${clientRepoAvailableVersions[-6]}",
             description: 'PMM Server Version to test for Upgrade',
             name: 'DOCKER_TAG')
         string(
@@ -98,7 +98,7 @@ pipeline {
             description: 'PMM Server Version to upgrade to, if empty docker tag will be used from version service.',
             name: 'DOCKER_TAG_UPGRADE')
         string(
-            defaultValue: clientRepoAvailableVersions[-5],
+            defaultValue: clientRepoAvailableVersions[-6],
             description: 'PMM Client Version to test for Upgrade',
             name: 'CLIENT_VERSION')
         string(
@@ -213,7 +213,6 @@ pipeline {
                 }
             }
         }
-
         stage('Setup Databases  and PMM Client for PMM-Server') {
             parallel {
                 stage('Setup PMM Client') {
@@ -231,6 +230,7 @@ pipeline {
                             export PWD=$(pwd)
                             export CHROMIUM_PATH=/usr/bin/chromium
                             ansible-galaxy collection install ansible.utils
+                            docker ps -a
                         '''
                     }
                 }
