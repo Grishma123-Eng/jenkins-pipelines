@@ -203,6 +203,7 @@ def minitestNodes = [  "min-bullseye-x64",
                        "min-ol-8-x64",
                        "min-jammy-x64",
                        "min-noble-x64",
+                       "min-amazon-2-x64",
                        "min-ol-9-x64"     ]
 
 def package_tests_ps80(def nodes) {
