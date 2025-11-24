@@ -370,19 +370,6 @@ env.PS_VERSION_SHORT = PS_VERSION_SHORT
 env.DOCKER_ACC = DOCKER_ACC
 env.product_to_test = product_to_test
 
-
-def sendBuildSlackNotification() {
-    def message = ''
-
-    if (env.FIPSMODE == 'YES') {
-        message = "[${JOB_NAME}]: PRO -> build finished successfully for ${BRANCH} - [${BUILD_URL}]"
-    } else {
-        message = "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]"
-    }
-
-    slackNotify(SLACKNOTIFY, "#00FF00", message)
-}
-
 pipeline {
     agent {
         label params.CLOUD == 'Hetzner' ? 'docker-x64-min' : 'docker'
@@ -1187,7 +1174,9 @@ parameters {
     post {
         success {
             script {
-                sendBuildSlackNotification ()
+                def prefix = env.FIPSMODE == 'YES' ? "PRO -> " : ""
+                slackNotify(SLACKNOTIFY, "#00FF00", "[${JOB_NAME}]: ${prefix}build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+                
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
