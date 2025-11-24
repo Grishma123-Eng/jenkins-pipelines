@@ -1174,9 +1174,8 @@ parameters {
     post {
         success {
             script {
-                def prefix = env.FIPSMODE == 'YES' ? "PRO -> " : ""
-                slackNotify(SLACKNOTIFY, "#00FF00", "[${JOB_NAME}]: ${prefix}build finished successfully for ${BRANCH} - [${BUILD_URL}]")
-                
+                slackNotify(SLACKNOTIFY, "#00FF00", "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
