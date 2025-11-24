@@ -151,7 +151,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+       // slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     }
 
 }
@@ -423,7 +423,7 @@ parameters {
                label params.CLOUD == 'Hetzner' ? 'deb12-x64' : 'min-focal-x64'
             }
             steps {
-                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+            //    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
                 script {
@@ -1174,11 +1174,11 @@ parameters {
     post {
         success {
             script {
-                if (env.FIPSMODE == 'YES') {
+            /*    if (env.FIPSMODE == 'YES') {
                      slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]")
-                }
+                }*/
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
