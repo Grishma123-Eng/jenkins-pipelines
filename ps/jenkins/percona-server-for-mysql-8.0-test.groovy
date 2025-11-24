@@ -351,12 +351,6 @@ def docker_test() {
     parallel stepsForParallel
 }
 
-def sendSlackSuccess() {
-    def suffix = env.FIPSMODE == 'YES' ? "PRO -> " : ""
-    def msg = "[${JOB_NAME}]: ${suffix}build finished successfully for ${BRANCH} - [${BUILD_URL}]"
-    slackNotify("${SLACKNOTIFY}", "#00FF00", msg)
-}
-
 @Field def mini_test_error = "False"
 def AWS_STASH_PATH
 def product_to_test = ''
@@ -1181,7 +1175,12 @@ parameters {
     post {
         success {
             script {
-                sendSlackSuccess()
+                if (env.FIPSMODE == 'YES') {
+                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
+                } else {
+                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
+                }
+            } 
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
@@ -1223,4 +1222,3 @@ parameters {
             deleteDir()
         }
     }
-}
