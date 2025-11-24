@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
-library changelog: false, identifier: 'lib@QA-hetzner-minitest', retriever: modernSCM([
+library changelog: false, identifier: 'lib@hetzner', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
+    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -34,7 +34,6 @@ void installCli(String PLATFORM) {
     """
 }
 
-
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
       sh """
@@ -58,7 +57,7 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
           else
               wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -O ps_builder.sh || curl \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${BRANCH}/build-ps/percona-server-8.0_builder.sh -o ps_builder.sh
           fi
-          grep "percona-server-server" ps_builder.sh
+          ls -la
           export build_dir=\$(pwd -P)
           if [ "$DOCKER_OS" = "none" ]; then
               set -o xtrace
@@ -152,7 +151,7 @@ def installDependencies(def nodeName) {
             echo "Unexpected node name: ${nodeName}"
         }
     } catch (Exception e) {
-      //  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
+        slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!")
     }
 
 }
@@ -201,10 +200,11 @@ def runPlaybook(def nodeName) {
 def minitestNodes = [  "min-bullseye-x64",
                        "min-bookworm-x64",
                        "min-ol-8-x64",
+                       "min-amazon-2-x64",
                        "min-jammy-x64",
                        "min-noble-x64",
-                       "min-amazon-2-x64",
-                       "min-ol-9-x64"     ]
+                       "min-ol-9-x64" ,  
+                         ]
 
 def package_tests_ps80(def nodes) {
     def stepsForParallel = [:]
@@ -221,7 +221,6 @@ def package_tests_ps80(def nodes) {
     }
     parallel stepsForParallel
 }
-
 def docker_test() {
     def stepsForParallel = [:] 
         stepsForParallel['Run for ARM64'] = {
@@ -359,18 +358,12 @@ def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
 def install_mysql_shell = 'no'
-
-// --- Minimal Preparation logic moved out to reduce pipeline size ---
 def BRANCH_NAME = env.BRANCH ?: "release-8.0.43-34"
 def PS_RELEASE = BRANCH_NAME.replaceAll("release-", "")
 def PS_VERSION_SHORT_KEY = PS_RELEASE.tokenize('.')[0..1].join('.')
 def PS_VERSION_SHORT = "PS${PS_VERSION_SHORT_KEY.replace('.', '')}"
 def DOCKER_ACC = "perconalab"
-
-// ✅ just assign, don’t redeclare with def
 product_to_test = (PS_VERSION_SHORT == 'PS84') ? 'ps_84' : 'ps_80'
-
-// Export to env so post-block can access them
 env.PS_RELEASE = PS_RELEASE
 env.PS_VERSION_SHORT_KEY = PS_VERSION_SHORT_KEY
 env.PS_VERSION_SHORT = PS_VERSION_SHORT
@@ -430,7 +423,7 @@ parameters {
                label params.CLOUD == 'Hetzner' ? 'deb12-x64' : 'min-focal-x64'
             }
             steps {
-             //   slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
+                slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${BRANCH} - [${BUILD_URL}]")
                 cleanUpWS()
                 installCli("deb")
                 script {
@@ -450,16 +443,15 @@ parameters {
                    cat awsUploadPath
                 '''
                 script {
-                    echo "hello"
-      //              AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'uploadPath', name: 'uploadPath'
                 stash includes: 'test/percona-server-8.0.properties', name: 'properties'
-          //      pushArtifactFolder(params.CLOUD, "source_tarball/", AWS_STASH_PATH)
-            //    uploadTarballfromAWS(params.CLOUD, "source_tarball/", AWS_STASH_PATH, 'source')
+                pushArtifactFolder(params.CLOUD, "source_tarball/", AWS_STASH_PATH)
+                uploadTarballfromAWS(params.CLOUD, "source_tarball/", AWS_STASH_PATH, 'source')
             }
         } 
-    /*    stage('Build PS generic source packages') {
+        stage('Build PS generic source packages') {
             parallel {
                 stage('Build PS generic source rpm') {
                     agent {
@@ -472,9 +464,9 @@ parameters {
                         popArtifactFolder(params.CLOUD, "source_tarball/", AWS_STASH_PATH)
                         script {
                             if (env.FIPSMODE == 'YES') {
-                                buildStage("centos:7", "--build_src_rpm=1 --enable_fipsmode=1")
+                                buildStage("oraclelinux:8", "--build_src_rpm=1 --enable_fipsmode=1")
                             } else {
-                                buildStage("centos:7", "--build_src_rpm=1")
+                                buildStage("oraclelinux:8", "--build_src_rpm=1")
                             }
                         }
 
@@ -509,7 +501,7 @@ parameters {
             parallel {
                 stage('Oracle Linux 8') {
                     when {
-                        expression { env.FIPSMODE == 'NO' }
+                       expression { env.FIPSMODE == 'NO' }
                     }
                     agent {
                         label params.CLOUD == 'Hetzner' ? 'docker-x64' : 'docker-32gb'
@@ -626,9 +618,6 @@ parameters {
                     }
                 }
                 stage('Amazon Linux 2023') {
-                    when {
-                        expression { env.FIPSMODE == 'YES' }
-                    }
                     agent {
                         label params.CLOUD == 'Hetzner' ? 'docker-x64' : 'docker-32gb'
                     }
@@ -645,9 +634,6 @@ parameters {
                     }
                 }
                 stage('Amazon Linux 2023 ARM') {
-                    when {
-                        expression { env.FIPSMODE == 'YES' }
-                    }
                     agent {
                         label params.CLOUD == 'Hetzner' ? 'docker-aarch64' : 'docker-32gb-aarch64'
                     }
@@ -761,8 +747,7 @@ parameters {
                         pushArtifactFolder(params.CLOUD, "deb/", AWS_STASH_PATH)
                     }
                 }
-          /*    
-           stage('Debian Trixie(13)') {
+                stage('Debian Trixie(13)') {
                     agent {
                         label params.CLOUD == 'Hetzner' ? 'docker-x64' : 'docker-32gb'
                     }
@@ -781,9 +766,8 @@ parameters {
 
                         pushArtifactFolder(params.CLOUD, "deb/", AWS_STASH_PATH)
                     }
-                } 
-                */
-           /*     stage('Ubuntu Focal(20.04) ARM') {
+                }
+                stage('Ubuntu Focal(20.04) ARM') {
                     when {
                         expression { env.FIPSMODE == 'NO' }
                     }
@@ -881,8 +865,7 @@ parameters {
                         pushArtifactFolder(params.CLOUD, "deb/", AWS_STASH_PATH)
                     }
                 }
-        /*   
-           stage('Debian Trixie(13) ARM') {
+                stage('Debian Trixie(13) ARM') {
                     agent {
                         label params.CLOUD == 'Hetzner' ? 'docker-aarch64' : 'docker-32gb-aarch64'
                     }
@@ -901,9 +884,8 @@ parameters {
 
                         pushArtifactFolder(params.CLOUD, "deb/", AWS_STASH_PATH)
                     }
-                } 
-                */
-         /*       stage('Oracle Linux 8 binary tarball') {
+                }
+                stage('Oracle Linux 8 binary tarball') {
                     when {
                         expression { env.FIPSMODE == 'NO' }
                     }
@@ -1187,19 +1169,17 @@ parameters {
                           wait: false
                 }
             }
-        } */
+        } 
     } 
     post {
         success {
             script {
                 if (env.FIPSMODE == 'YES') {
-                    // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 } else {
-                    // slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]")
                 }
-
                 unstash 'properties'
-
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
                 if (fileExists('test/percona-server-8.0.properties')) {
@@ -1209,8 +1189,6 @@ parameters {
                 } else {
                     error "Properties file not found: test/percona-server-8.0.properties"
                 }
-
-                // ✅ Call external shared function
                 MinitestPostSucess(
                     product_to_test: product_to_test,
                     PS_RELEASE: PS_RELEASE,
@@ -1243,4 +1221,3 @@ parameters {
         }
     }
 }
-
