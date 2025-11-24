@@ -370,6 +370,14 @@ env.PS_VERSION_SHORT = PS_VERSION_SHORT
 env.DOCKER_ACC = DOCKER_ACC
 env.product_to_test = product_to_test
 
+void notifyBuildSuccess() {
+    if (env.FIPSMODE == 'YES') {
+        slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+    } else {
+        slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build finished successfully for ${BRANCH} - [${BUILD_URL}]")
+    }
+}
+
 pipeline {
     agent {
         label params.CLOUD == 'Hetzner' ? 'docker-x64-min' : 'docker'
@@ -1171,16 +1179,10 @@ parameters {
             }
         } 
     } 
-
     post {
         success {
             script {
-                if (env.FIPSMODE == 'YES') {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO -> build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
-                } else {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${BRANCH} - [${BUILD_URL}]")
-                }
-            } 
+                notifyBuildSuccess()
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
@@ -1222,3 +1224,4 @@ parameters {
             deleteDir()
         }
     }
+}
