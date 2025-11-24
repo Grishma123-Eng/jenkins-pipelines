@@ -1174,13 +1174,6 @@ parameters {
     post {
         success {
             script {
-                 sendSuccessNotification(
-                    SLACKNOTIFY,
-                    JOB_NAME,
-                    BRANCH,
-                    BUILD_URL,
-                    env.FIPSMODE
-                 )
                 unstash 'properties'
                 // Extract PS_REVISION from properties file
                 def PS_REVISION = ''
