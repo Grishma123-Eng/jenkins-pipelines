@@ -1,0 +1,18 @@
+- job:
+    name: ps-package-testing-molecule-site-check
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    properties:
+        - build-discarder:
+            num-to-keep: 100
+    concurrent: true
+    pipeline-scm:
+        scm:
+            - git:
+                url: https://github.com/grishma123-eng/jenkins-pipelines.git
+                branches:
+                    - 'site-checks-fix'
+                wipe-workspace: true
+        lightweight-checkout: true
+        script-path: ps/jenkins/ps-package-testing-molecule-site-check.groovy
