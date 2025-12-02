@@ -15,12 +15,6 @@ def ps90PackageTesting() {
 
 def ps80PackageTesting() {
     return [
-        'ubuntu-noble'
-    ]
-}
-
-def ps84PackageTesting() {
-    return [
         'debian-11',
         'debian-11-arm',
         'debian-12',
@@ -28,16 +22,20 @@ def ps84PackageTesting() {
         'oracle-8',
         'oracle-9',
         'rhel-9',
-        'rhel-10',
         'rhel-8-arm',
         'rhel-9-arm',
-        'rhel-10-arm',
         'ubuntu-jammy',
         'ubuntu-jammy-arm',
         'ubuntu-focal',
         'ubuntu-focal-arm',
         'ubuntu-noble',
         'ubuntu-noble-arm'
+    ]
+}
+
+def ps84PackageTesting() {
+    return [
+        'debian-13'
     ]
 }
 
