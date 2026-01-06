@@ -1,0 +1,100 @@
+- job:
+    name: pt-package-testing-testjob
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    properties:
+        - build-discarder:
+            num-to-keep: 15
+    concurrent: true
+    pipeline-scm:
+        scm:
+            - git:
+                url: https://github.com/grishma123-eng/jenkins-pipelines.git
+                branches:
+                    - 'pt-code'
+                wipe-workspace: true
+        lightweight-checkout: true
+        script-path: pt/jenkins/pt-package-testing-testfile.groovy
+    parameters:
+        - choice:
+            name: product_to_test
+            choices:
+                - "pt3"
+            description: 'Product version to test'
+        - choice:
+            name: node_to_test
+            choices:
+                - 'min-ol-8-x64'
+                - 'min-ol-9-x64'
+                - 'min-rhel-10-x64'
+                - 'min-al2023-x64'
+                - 'min-focal-x64'
+                - 'min-jammy-x64'
+                - 'min-noble-x64'
+                - 'min-buster-x64'
+                - 'min-bullseye-x64'
+                - 'min-bookworm-x64'
+                - 'min-trixie-x64'
+            description: 'Node to run tests on'
+        - choice:
+            name: install_repo
+            choices:
+                - "testing"
+                - "main"
+                - "experimental"
+            description: 'Choose the repo to install pt packages from'
+        - string:
+            name: git_repo
+            default: 'https://github.com/grishma123-eng//package-testing.git'
+            description: ""
+            trim: false
+        - string:
+            name: git_branch
+            default: 'master'
+            description: ""
+            trim: false
+        - bool:
+            name: skip_ps57
+            default: false
+            description: "Enable to skip ps 5.7 packages installation tests"
+        - bool:
+            name: skip_ps80
+            default: false
+            description: "Enable to skip ps 8.0 packages installation tests"
+        - bool:
+            name: skip_ps84
+            default: false
+            description: "Enable to skip ps 8.4 packages installation tests"
+        - bool:
+            name: skip_pxc57
+            default: false
+            description: "Enable to skip pxc 5.7 packages installation tests"
+        - bool:
+            name: skip_pxc80
+            default: false
+            description: "Enable to skip pxc 8.0 packages installation tests"
+        - bool:
+            name: skip_pxc84
+            default: false
+            description: "Enable to skip pxc 8.4 packages installation tests"
+        - bool:
+            name: skip_psmdb44
+            default: false
+            description: "Enable to skip psmdb 4.4 packages installation tests"
+        - bool:
+            name: skip_psmdb50
+            default: false
+            description: "Enable to skip psmdb 5.0 packages installation tests"
+        - bool:
+            name: skip_psmdb60
+            default: true
+            description: "Enable to skip psmdb 6.0 packages installation tests. Leave enabled till PT-2217 is fixed"
+        - bool:
+            name: skip_upstream57
+            default: false
+            description: "Enable to skip MySQL 5.7 packages installation tests"
+        - bool:
+            name: skip_upstream80
+            default: false
+            description: "Enable to skip MySQL 8.0 packages installation tests"
