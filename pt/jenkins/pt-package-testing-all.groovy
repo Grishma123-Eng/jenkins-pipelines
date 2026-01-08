@@ -64,6 +64,10 @@ pipeline {
             description: "Enable to skip ps 8.0 packages installation tests"
         )
         booleanParam(
+            name: 'skip_ps84',
+            description: "Enable to skip ps 8.4 packages installation tests"
+        )
+        booleanParam(
             name: 'skip_pxc57',
             description: "Enable to skip pxc 5.7 packages installation tests"
         )
@@ -72,16 +76,16 @@ pipeline {
             description: "Enable to skip pxc 8.0 packages installation tests"
         )
         booleanParam(
-            name: 'skip_psmdb44',
-            description: "Enable to skip psmdb 4.4 packages installation tests"
+            name: 'skip_pxc84',
+            description: "Enable to skip pxc 8.4 packages installation tests"
         )
         booleanParam(
-            name: 'skip_psmdb50',
-            description: "Enable to skip psmdb 5.0 packages installation tests"
+            name: 'skip_psmdb70',
+            description: "Enable to skip psmdb 7.0 packages installation tests"
         )
         booleanParam(
-            name: 'skip_psmdb60',
-            description: "Enable to skip psmdb 6.0 packages installation tests."
+            name: 'skip_psmdb80',
+            description: "Enable to skip psmdb 8.0 packages installation tests"
         )
         booleanParam(
             name: 'skip_upstream57',
@@ -99,61 +103,218 @@ pipeline {
     }
 
     stages {
+        stage("Prepare") {
+            steps {
+                script {
+                    currentBuild.displayName = "#${BUILD_NUMBER}-${params.product_to_test}-${params.install_repo}-${params.node_to_test}"
+                }
+            }
+        }
+
         stage('Run parallel') {
             parallel {
-                stage('Debian Bullseye') {
+                stage('Install') {
+                    agent {
+                        label params.node_to_test
+                    }
+
                     steps {
-                        runNodeBuild('min-bullseye-x64')
+                        runPlaybook("install")
                     }
                 }
 
-                stage('Debian Bookworm') {
+                stage('Upgrade') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            params.install_repo != 'main'
+                        }
+                    }
                     steps {
-                        runNodeBuild('min-bookworm-x64')
+                        runPlaybook("upgrade")
                     }
                 }
 
-                stage('Debian Trixie') {
-                    steps {
-                        runNodeBuild('min-trixie-x64')
+                stage('ps57_and_pt') {
+                    agent {
+                        label params.node_to_test
                     }
-                }
-                stage('Ubuntu Focal') {
-                    steps {
-                        runNodeBuild('min-focal-x64')
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(bullseye|noble)/) && !params.skip_ps57
+                        }
                     }
-                }
-
-                stage('Ubuntu Jammy') {
-                    steps {
-                        runNodeBuild('min-jammy-x64')
+                    environment {
+                        install_with = 'ps57'
                     }
-                }
-
-                stage('Ubuntu Noble Numbat') {
                     steps {
-                        runNodeBuild('min-noble-x64')
+                        runPlaybook("pt_with_products")
                     }
                 }
 
-                stage('Oracle Linux 8') {
+                stage('ps80_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(noble)/) && !params.skip_ps80
+                        }
+                    }
+                    environment {
+                        install_with = 'ps80'
+                    }
                     steps {
-                        runNodeBuild('min-ol-8-x64')
+                        runPlaybook("pt_with_products")
                     }
                 }
-                stage('Oracle Linux 9') {
+
+                stage('ps84_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(noble)/) && !params.skip_ps84
+                        }
+                    }
+                    environment {
+                        install_with = 'ps84'
+                    }
                     steps {
-                        runNodeBuild('min-ol-9-x64')
+                        runPlaybook("pt_with_products")
                     }
                 }
-                stage('RedHat 10') {
+
+                stage('pxc57_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(bullseye|noble)/) && !params.skip_pxc57
+                        }
+                    }
+                    environment {
+                        install_with = 'pxc57'
+                    }
                     steps {
-                        runNodeBuild('min-rhel-10-x64')
+                        runPlaybook("pt_with_products")
                     }
                 }
-                stage('Amazon Linux 2023') {
+
+                stage('pxc80_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(noble)/) && !params.skip_pxc80
+                        }
+                    }
+                    environment {
+                        install_with = 'pxc80'
+                    }
                     steps {
-                        runNodeBuild('min-al2023-x64')
+                        runPlaybook("pt_with_products")
+                    }
+                }
+
+                stage('pxc84_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(noble)/) && !params.skip_pxc84
+                        }
+                    }
+                    environment {
+                        install_with = 'pxc84'
+                    }
+                    steps {
+                        runPlaybook("pt_with_products")
+                    }
+                }
+
+                stage('psmdb70_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(ol-9|bookworm|noble)/) && !params.skip_psmdb70
+                        }
+                    }
+                    environment {
+                        install_with = 'psmdb70'
+                    }
+                    steps {
+                        runPlaybook("pt_with_products")
+                    }
+                }
+
+                stage('psmdb80_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(ol-9|bookworm|noble)/) && !params.skip_psmdb80
+                        }
+                    }
+                    environment {
+                        install_with = 'psmdb80'
+                    }
+                    steps {
+                        runPlaybook("pt_with_products")
+                    }
+                }
+
+                stage('upstream57_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(ol-8|ol-9|focal|jammy|buster|bullseye|bookworm|noble)/) && !params.skip_upstream57
+                        }
+                    }
+                    environment {
+                        install_with = 'upstream57'
+                    }
+                    steps {
+                        runPlaybook("pt_with_products")
+                    }
+                }
+
+                stage('upstream80_and_pt') {
+                    agent {
+                        label params.node_to_test
+                    }
+                    when {
+                        beforeAgent true
+                        expression {
+                            !(params.node_to_test =~ /(buster|bookworm|noble)/) && !params.skip_upstream80
+                        }
+                    }
+                    environment {
+                        install_with = 'upstream80'
+                    }
+                    steps {
+                        runPlaybook("pt_with_products")
                     }
                 }
             }

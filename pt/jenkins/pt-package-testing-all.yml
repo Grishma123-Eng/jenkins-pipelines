@@ -22,15 +22,30 @@
                 - "pt3"
             description: 'Product version to test'
         - choice:
+            name: node_to_test
+            choices:
+                - 'min-ol-8-x64'
+                - 'min-ol-9-x64'
+                - 'min-rhel-10-x64'
+                - 'min-al2023-x64'
+                - 'min-focal-x64'
+                - 'min-jammy-x64'
+                - 'min-noble-x64'
+                - 'min-buster-x64'
+                - 'min-bullseye-x64'
+                - 'min-bookworm-x64'
+                - 'min-trixie-x64'
+            description: 'Node to run tests on'
+        - choice:
             name: install_repo
             choices:
                 - "testing"
                 - "main"
                 - "experimental"
-            description: 'Choose the repo to install PT packages from'
+            description: 'Choose the repo to install pt packages from'
         - string:
             name: git_repo
-            default: 'https://github.com/Percona-QA/package-testing.git'
+            default: 'https://github.com/grishma123-eng//package-testing.git'
             description: ""
             trim: false
         - string:
@@ -47,6 +62,10 @@
             default: false
             description: "Enable to skip ps 8.0 packages installation tests"
         - bool:
+            name: skip_ps84
+            default: false
+            description: "Enable to skip ps 8.4 packages installation tests"
+        - bool:
             name: skip_pxc57
             default: false
             description: "Enable to skip pxc 5.7 packages installation tests"
@@ -55,17 +74,17 @@
             default: false
             description: "Enable to skip pxc 8.0 packages installation tests"
         - bool:
-            name: skip_psmdb44
+            name: skip_pxc84
             default: false
-            description: "Enable to skip psmdb 4.4 packages installation tests"
+            description: "Enable to skip pxc 8.4 packages installation tests"
         - bool:
-            name: skip_psmdb50
+            name: skip_psmdb70
             default: false
-            description: "Enable to skip psmdb 5.0 packages installation tests"
+            description: "Enable to skip psmdb 7.0 packages installation tests"
         - bool:
-            name: skip_psmdb60
-            default: true
-            description: "Enable to skip psmdb 6.0 packages installation tests. Leave enabled till PT-2217 is fixed"
+            name: skip_psmdb80
+            default: false
+            description: "Enable to skip psmdb 8.0 packages installation tests"
         - bool:
             name: skip_upstream57
             default: false
