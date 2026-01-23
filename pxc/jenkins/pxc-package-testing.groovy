@@ -1,6 +1,6 @@
-library changelog: false, identifier: 'lib@master', retriever: modernSCM([
+library changelog: false, identifier: 'lib@rocky-linux8/9', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -409,6 +409,8 @@ void setInventories(String param_test_type){
                         SSH_USER="ec2-user"
                     }else if(("${params.node_to_test}" == "centos-7")){
                         SSH_USER="centos"
+                    }else if(("${params.node_to_test}" == "rocky-linux-8") || (("${params.node_to_test}" == "rocky-linux-9") )){
+                        SSH_USER="rocky"
                     }else{
                         echo "OS Not yet in list of Keypath setup"
                     }
