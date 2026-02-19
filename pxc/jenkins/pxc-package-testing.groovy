@@ -736,8 +736,8 @@ properties([
                                         'rhel-9-arm',
                                         'rocky-linux-8',
                                         'rocky-linux-8-arm',
-                                        'rocky-linux-9'
-                                        'rocky-linux-9-arm'
+                                        'rocky-linux-9',
+                                        'rocky-linux-9-arm',
                                         'amazon-linux-2023',
                                         'amazon-linux-2023-arm'
                         ]
