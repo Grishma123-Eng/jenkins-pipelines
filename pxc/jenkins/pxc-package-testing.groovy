@@ -6,10 +6,6 @@ library changelog: false, identifier: 'lib@rocky-linux8/9', retriever: modernSCM
 import groovy.transform.Field
 
 def runMoleculeAction(String action, String product_to_test, String scenario, String param_test_type, String test_repo, String version_check) {
-    if (!scenario?.trim()) {
-        error("Missing required scenario (node_to_test). Set the job parameter 'node_to_test' to a valid Molecule scenario.")
-    }
-    def scenarioArg = "-s ${scenario}"
     def awsCredentials = [
         sshUserPrivateKey(
             credentialsId: 'MOLECULE_AWS_PRIVATE_KEY',
@@ -266,11 +262,11 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                     echo "param_test_type is ${param_test_type}"
 
                     cd ${product_to_test}-bootstrap-${param_test_type}
-                    molecule ${action} ${scenarioArg}
+                    molecule ${action} -s ${scenario}
                     cd -
 
                     cd ${product_to_test}-common-${param_test_type}
-                    molecule ${action} ${scenarioArg}
+                    molecule ${action} -s ${scenario}
                     cd -
                 """
             }else{
@@ -285,11 +281,11 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                     echo "param_test_type is ${param_test_type}"
 
                     cd ${product_to_test}-bootstrap-${param_test_type}
-                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile ${action} ${scenarioArg}
+                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile ${action} -s ${scenario}
                     cd -
 
                     cd ${product_to_test}-common-${param_test_type}
-                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile  ${action} ${scenarioArg}
+                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile  ${action} -s ${scenario}
                     cd -
                 """
             }
@@ -401,9 +397,6 @@ void setInventories(String param_test_type){
                     def KEYPATH_COMMON
                     def SSH_USER
 
-                    if (!params.node_to_test?.trim()) {
-                        error("Missing required node_to_test. Cannot set inventories without a target OS/scenario.")
-                    }
                     KEYPATH_BOOTSTRAP="/home/admin/.cache/molecule/${product_to_test}-bootstrap-${param_test_type}/${params.node_to_test}/ssh_key-us-west-1"
                     KEYPATH_COMMON="/home/admin/.cache/molecule/${product_to_test}-common-${param_test_type}/${params.node_to_test}/ssh_key-us-west-1"
 
@@ -416,8 +409,6 @@ void setInventories(String param_test_type){
                         SSH_USER="ec2-user"
                     }else if(("${params.node_to_test}" == "centos-7")){
                         SSH_USER="centos"
-                    }else if(("${params.node_to_test}" == "rocky-linux-8") || (("${params.node_to_test}" == "rocky-linux-9") )){
-                        SSH_USER="rocky"
                     }else{
                         echo "OS Not yet in list of Keypath setup"
                     }
@@ -1181,4 +1172,3 @@ pipeline {
         }
     }
 }
-
