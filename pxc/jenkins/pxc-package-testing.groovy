@@ -6,6 +6,7 @@ library changelog: false, identifier: 'lib@rocky-linux8/9', retriever: modernSCM
 import groovy.transform.Field
 
 def runMoleculeAction(String action, String product_to_test, String scenario, String param_test_type, String test_repo, String version_check) {
+    def scenarioArg = scenario?.trim() ? "-s ${scenario}" : ""
     def awsCredentials = [
         sshUserPrivateKey(
             credentialsId: 'MOLECULE_AWS_PRIVATE_KEY',
@@ -262,11 +263,11 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                     echo "param_test_type is ${param_test_type}"
 
                     cd ${product_to_test}-bootstrap-${param_test_type}
-                    molecule ${action} -s ${scenario}
+                    molecule ${action} ${scenarioArg}
                     cd -
 
                     cd ${product_to_test}-common-${param_test_type}
-                    molecule ${action} -s ${scenario}
+                    molecule ${action} ${scenarioArg}
                     cd -
                 """
             }else{
@@ -281,11 +282,11 @@ def runMoleculeAction(String action, String product_to_test, String scenario, St
                     echo "param_test_type is ${param_test_type}"
 
                     cd ${product_to_test}-bootstrap-${param_test_type}
-                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile ${action} -s ${scenario}
+                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile ${action} ${scenarioArg}
                     cd -
 
                     cd ${product_to_test}-common-${param_test_type}
-                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile  ${action} -s ${scenario}
+                    molecule -e ${WORKSPACE}/${product_to_test}/${params.node_to_test}/${param_test_type}/envfile  ${action} ${scenarioArg}
                     cd -
                 """
             }
@@ -405,7 +406,7 @@ void setInventories(String param_test_type){
                         SSH_USER="ubuntu"            
                     }else if(("${params.node_to_test}" == "debian-11") ||("${params.node_to_test}" == "debian-12") || ("${params.node_to_test}" == "debian-11-arm") || ("${params.node_to_test}" == "debian-12-arm") || ("${params.node_to_test}" == "debian-10")){
                         SSH_USER="admin"
-                    }else if(("${params.node_to_test}" == "amazon-linux-2023-arm") || ("${params.node_to_test}" == "amazon-linux-2023") || ("${params.node_to_test}" == "ol-8") || ("${params.node_to_test}" == "ol-9") || ("${params.node_to_test}" == "min-amazon-2") || ("${params.node_to_test}" == "rhel-8") || ("${params.node_to_test}" == "rhel-9") ("${params.node_to_test}" == "rhel-8-arm") || ("${params.node_to_test}" == "rhel-9-arm")){
+                    }else if(("${params.node_to_test}" == "amazon-linux-2023-arm") || ("${params.node_to_test}" == "amazon-linux-2023") || ("${params.node_to_test}" == "ol-8") || ("${params.node_to_test}" == "ol-9") || ("${params.node_to_test}" == "min-amazon-2") || ("${params.node_to_test}" == "rhel-8") || ("${params.node_to_test}" == "rhel-9") || ("${params.node_to_test}" == "rhel-8-arm") || ("${params.node_to_test}" == "rhel-9-arm")){
                         SSH_USER="ec2-user"
                     }else if(("${params.node_to_test}" == "centos-7")){
                         SSH_USER="centos"
