@@ -1,14 +1,26 @@
 
 library changelog: false, identifier: "lib@master", retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ])
 
 
 def ps90PackageTesting() {
     return [
         'ubuntu-noble',
-        'ubuntu-noble-arm'
+        'ubuntu-noble-arm',
+        'ubuntu-jammy',
+        'ubuntu-jammy-arm',
+        'debian-12',
+        'debian-12-arm',
+        'debian-13',
+        'debian-13-arm',
+        'oracle-8',
+        'oracle-9',
+        'rhel-9',
+        'rhel-9-arm',
+        'rhel-10',
+        'rhel-10-arm'
     ]
 }
 
@@ -449,22 +461,19 @@ pipeline {
                         steps {
                             script {
                                 if (action_to_test == 'install') {
-                                    def formatted_product_to_test = product_to_test.replace('ps', 'ps_')
-                                    sh """
-                                        echo "Formatted product_to_test: ${formatted_product_to_test}"
-                                        echo PLAYBOOK_VAR="${formatted_product_to_test}" > .env.ENV_VARS
+                                     sh """
+                                        echo PLAYBOOK_VAR="${product_to_test}" > .env.ENV_VARS
                                     """
                                 } 
+                                    
                                 else if (action_to_test == 'upgrade') {
-                                    def formatted_product_to_test = product_to_test.replace('ps', 'ps_')
                                     sh """
-                                        echo PLAYBOOK_VAR="ps_upgrade" > .env.ENV_VARS
-                                        echo PLAYBOOK_VAR="${formatted_product_to_test}" > .env.ENV_VARS
+                                        echo PLAYBOOK_VAR="${product_to_test}" > .env.ENV_VARS
                                     """
                                 }
                                 else if (action_to_test == 'major_upgrade')     {
                                     sh """
-                                        echo PLAYBOOK_VAR="ps_major_upgrade" > .env.ENV_VARS
+                                        echo PLAYBOOK_VAR="${product_to_test}" > .env.ENV_VARS
                                     """
                                 }
                                 else {
