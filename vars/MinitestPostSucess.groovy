@@ -41,7 +41,7 @@ def call(Map args = [:]) {
         withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
             sh """#!/bin/bash
                 set -e -x
-                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/grishma123-eng/package-testing.git
+                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-eng/package-testing.git
                 cd package-testing
                 git config user.name "jenkins-pxc-cd"
                 git config user.email "it+jenkins-pxc-cd@percona.com"
@@ -85,13 +85,13 @@ def call(Map args = [:]) {
                         git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
                     fi
                     
-                    git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/grishma123-eng/package-testing.git
+                    git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-eng/package-testing.git
                     git push origin \${AUTO_BRANCH} --force
 
                      PR_EXISTS=\$(curl -s \
                     -H "Authorization: token \${TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
-                    "https://api.github.com/repos/grishma123-eng/package-testing/pulls?head=grishma123-eng:\${AUTO_BRANCH}&base=master&state=open" \
+                    "https://api.github.com/repos/Grishma123-eng/package-testing/pulls?head=Grishma123-eng:\${AUTO_BRANCH}&base=master&state=open" \
                     | grep -c '"number"' || true)
 
                     if [[ "\$PR_EXISTS" -gt 0 ]]; then
@@ -101,7 +101,7 @@ def call(Map args = [:]) {
                       curl -s -X POST \
                       -H "Authorization: token \${TOKEN}" \
                       -H "Accept: application/vnd.github.v3+json" \
-                      https://api.github.com/repos/grishma123-eng/package-testing/pulls \
+                      https://api.github.com/repos/Grishma123-eng/package-testing/pulls \
                       -d "{\\"title\\": \\"Autocommit: VERSIONS update for ${PS_VERSION_SHORT} - ${PS_RELEASE}\\", \\"head\\": \\"\${AUTO_BRANCH}\\", \\"base\\": \\"master\\", \\"body\\": \\"Automated PR: updating VERSIONS file for ${PS_VERSION_SHORT} revision ${PS_REVISION} release ${PS_RELEASE}.\\"}"
                     fi
                 fi
