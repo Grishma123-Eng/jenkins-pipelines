@@ -41,10 +41,11 @@ def call(Map args = [:]) {
         withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
             sh """#!/bin/bash
                 set -e -x
-                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-eng/package-testing.git
+                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/Percona-QA/package-testing.git
                 cd package-testing
                 git config user.name "jenkins-pxc-cd"
                 git config user.email "it+jenkins-pxc-cd@percona.com"
+                git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-Eng/package-testing.git
                 AUTO_BRANCH="auto/versions-update-${PS_VERSION_SHORT}"
 
                 if git ls-remote --exit-code --heads origin \${AUTO_BRANCH}; then
