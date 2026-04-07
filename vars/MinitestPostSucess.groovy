@@ -1,0 +1,174 @@
+
+def call(Map args = [:]) {
+    def product_to_test  = args.get('product_to_test', '')
+    def PS_RELEASE       = args.get('PS_RELEASE', '')
+    def PS_VERSION_SHORT = args.get('PS_VERSION_SHORT', '')
+    def PS_VERSION_SHORT_KEY = args.get('PS_VERSION_SHORT_KEY', '')
+    def minitestNodes    = args.get('minitestNodes', [])
+    def SLACKNOTIFY      = args.get('SLACKNOTIFY', '')
+    def BRANCH           = args.get('BRANCH', '')
+    def DOCKER_ACC       = args.get('DOCKER_ACC', '')
+    def packageTestsClosure = args.get('packageTestsClosure', null)
+    def dockerTestClosure = args.get('dockerTestClosure', null)
+
+    echo "Starting post-success logic..."
+    echo "PS_RELEASE: ${PS_RELEASE}"
+    echo "PS_VERSION_SHORT_KEY: ${PS_VERSION_SHORT_KEY}"
+    echo "PS_VERSION_SHORT: ${PS_VERSION_SHORT}"
+    echo "Docker Account: ${DOCKER_ACC}"
+
+    // Extract PS_REVISION from properties file
+    def PS_REVISION = ''
+    if (fileExists('test/percona-server-8.0.properties')) {
+        PS_REVISION = sh(returnStdout: true, script: "grep REVISION test/percona-server-8.0.properties | awk -F '=' '{ print\$2 }'").trim()
+        echo "Revision is: ${PS_REVISION}"
+    } else {
+        error "Properties file not found: test/percona-server-8.0.properties"
+    }
+
+    if (product_to_test == 'PS80') {
+        echo "Running PS80-specific steps"
+    } else if (product_to_test == 'PS84') {
+        echo "Running PS84-specific steps"
+    } else {
+        echo "Running client test"
+    }
+
+    if ("${PS_VERSION_SHORT}") {
+        echo "Executing MINITESTS as VALID VALUE: ${PS_VERSION_SHORT}"
+        echo "Checking for GitHub Repo VERSIONS file changes..."
+
+        withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+            sh """#!/bin/bash
+                set -e -x
+                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/grishma123-eng/package-testing.git
+                cd package-testing
+                git config user.name "jenkins-pxc-cd"
+                git config user.email "it+jenkins-pxc-cd@percona.com"
+                AUTO_BRANCH="auto/versions-update-${PS_VERSION_SHORT}"
+
+                if git ls-remote --exit-code --heads origin \${AUTO_BRANCH}; then
+                    echo "Branch \${AUTO_BRANCH} already exists — fetching and checking out"
+                    git fetch origin \${AUTO_BRANCH}
+                    git checkout \${AUTO_BRANCH}
+                    BRANCH_EXISTS=true
+                else
+                    echo "Branch \${AUTO_BRANCH} does not exist — creating it"
+                    git checkout -b \${AUTO_BRANCH}
+                    BRANCH_EXISTS=false
+                fi
+
+                echo "${PS_VERSION_SHORT} is the VALUE!!@!"
+                export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
+
+                if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
+                    echo "\$RELEASE_VER_VAL is a valid version"
+                    OLD_REV=\$(grep ${PS_VERSION_SHORT}_REV VERSIONS | cut -d '=' -f2-)
+                    OLD_VER=\$(grep ${PS_VERSION_SHORT}_VER VERSIONS | cut -d '=' -f2-)
+                    sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${PS_REVISION}'"'/g VERSIONS
+                    sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/${PS_VERSION_SHORT}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+                else
+                    echo "INVALID PS8_RELEASE_VERSION VALUE: \$RELEASE_VER_VAL"
+                fi
+
+                git diff
+                if [[ -z \$(git diff) ]]; then
+                    echo "No changes"
+                else
+                    echo "There are changes"
+                    git add -A
+                    if [ "\$BRANCH_EXISTS" = true ]; then
+                        echo "Amending existing commit..."
+                        git commit --amend --no-edit
+                    else
+                        echo "Creating first commit..."
+                        git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
+                    fi
+                    
+                    git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/grishma123-eng/package-testing.git
+                    git push origin \${AUTO_BRANCH} --force
+
+                     PR_EXISTS=\$(curl -s \
+                    -H "Authorization: token \${TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/grishma123-eng/package-testing/pulls?head=grishma123-eng:\${AUTO_BRANCH}&base=master&state=open" \
+                    | grep -c '"number"' || true)
+
+                    if [[ "\$PR_EXISTS" -gt 0 ]]; then
+                      echo "PR already exists for \${AUTO_BRANCH} — updated with amended commit, no new PR needed"
+                    else
+                      echo "No existing PR — creating new PR" 
+                      curl -s -X POST \
+                      -H "Authorization: token \${TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      https://api.github.com/repos/grishma123-eng/package-testing/pulls \
+                      -d "{\\"title\\": \\"Autocommit: VERSIONS update for ${PS_VERSION_SHORT} - ${PS_RELEASE}\\", \\"head\\": \\"\${AUTO_BRANCH}\\", \\"base\\": \\"master\\", \\"body\\": \\"Automated PR: updating VERSIONS file for ${PS_VERSION_SHORT} revision ${PS_REVISION} release ${PS_RELEASE}.\\"}"
+                    fi
+                fi
+            """
+        }
+
+        if (packageTestsClosure && dockerTestClosure) {
+            parallel(
+                "Start Minitests for PS": {
+                    try {
+                        packageTestsClosure(minitestNodes)
+                        echo "Minitests completed successfully. Triggering next stages."
+
+                        // Trigger PS package-testing job on another Jenkins
+                        withCredentials([string(credentialsId: 'JNKPERCONA_PS80_TOKEN', variable: 'TOKEN')]) {
+                            def jenkinsServerUrl = 'https://ps80.cd.percona.com'
+                            def jobName = 'ps-package-testing-molecule'
+                            def response = sh(script: """
+                                curl -X POST \\
+                                -u ${TOKEN} \\
+                                "${jenkinsServerUrl}/job/${jobName}/buildWithParameters" \\
+                                --data-urlencode "product_to_test=${product_to_test}" \\
+                                --data-urlencode "install_repo=testing" \\
+                                --data-urlencode "action_to_test=install" \\
+                                --data-urlencode "check_warnings=yes" \\
+                                --data-urlencode "install_mysql_shell=no"
+                            """, returnStdout: true).trim()
+                            echo "PS job triggered on ${jenkinsServerUrl}/job/${jobName}"
+                            echo "Response: ${response}"
+                        }
+
+                        // Trigger GitHub workflow
+                        echo "Trigger PMM_PS GitHub Actions Workflow"
+                        withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
+                            sh """
+                                curl -i -v -X POST \
+                                -H "Accept: application/vnd.github.v3+json" \
+                                -H "Authorization: token ${GITHUB_API_TOKEN}" \
+                                "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                -d '{"ref":"main","inputs":{"ps_version":"${PS_RELEASE}"}}'
+                            """
+                        }
+
+                    } catch (err) {
+                        echo " Minitests block failed: ${err}"
+                        currentBuild.result = 'FAILURE'
+                        throw err
+                    }
+                },
+                "Start Docker job": {
+                    try {
+                        dockerTestClosure()
+                        echo "Docker images run successfully."
+                    } catch (err) {
+                        echo " Docker test block failed: ${err}"
+                        currentBuild.result = 'FAILURE'
+                        throw err
+                    }
+                }
+            )
+        } else {
+            error "packageTestsClosure and dockerTestClosure must be provided"
+        }
+
+    } else {
+        error "Skipping MINITESTS — invalid RELEASE VERSION FOR THIS JOB"
+    }
+
+    deleteDir()
+}
