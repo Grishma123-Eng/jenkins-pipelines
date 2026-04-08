@@ -34,80 +34,80 @@ def call(Map args = [:]) {
         echo "Running client test"
     }
 
-    if ("${PS_VERSION_SHORT}") {
-        echo "Executing MINITESTS as VALID VALUE: ${PS_VERSION_SHORT}"
-        echo "Checking for GitHub Repo VERSIONS file changes..."
+ if ("${PS_VERSION_SHORT}") {
+    echo "Executing MINITESTS as VALID VALUE: ${PS_VERSION_SHORT}"
+    echo "Checking for GitHub Repo VERSIONS file changes..."
 
-        withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
-            sh """#!/bin/bash
-                set -e -x
-                git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/Percona-QA/package-testing.git
-                cd package-testing
-                git config user.name "jenkins-pxc-cd"
-                git config user.email "it+jenkins-pxc-cd@percona.com"
-                git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-Eng/package-testing.git
-                AUTO_BRANCH="auto/versions-update-${PS_VERSION_SHORT}"
+    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+        sh """#!/bin/bash
+            set -e -x
+            git clone https://jenkins-pxc-cd:\${TOKEN}@github.com/Percona-QA/package-testing.git
+            cd package-testing
+            git config user.name "jenkins-pxc-cd"
+            git config user.email "it+jenkins-pxc-cd@percona.com"
 
-                if git ls-remote --exit-code --heads origin \${AUTO_BRANCH}; then
-                    echo "Branch \${AUTO_BRANCH} already exists — fetching and checking out"
-                    git fetch origin \${AUTO_BRANCH}
-                    git checkout \${AUTO_BRANCH}
-                    BRANCH_EXISTS=true
+            # Checkout test-grishma if exists, else create from master
+            if git ls-remote --exit-code --heads origin test-grishma; then
+                echo "test-grishma exists — checking out"
+                git fetch origin test-grishma
+                git checkout test-grishma
+                BRANCH_EXISTS=true
+            else
+                echo "test-grishma does not exist — creating from master"
+                git checkout -b test-grishma
+                BRANCH_EXISTS=false
+            fi
+
+            echo "${PS_VERSION_SHORT} is the VALUE!!@!"
+            export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
+
+            if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
+                echo "\$RELEASE_VER_VAL is a valid version"
+                OLD_REV=\$(grep ${PS_VERSION_SHORT}_REV VERSIONS | cut -d '=' -f2-)
+                OLD_VER=\$(grep ${PS_VERSION_SHORT}_VER VERSIONS | cut -d '=' -f2-)
+                sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${PS_REVISION}'"'/g VERSIONS
+                sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/${PS_VERSION_SHORT}_VER='"'${PS_RELEASE}'"'/g VERSIONS
+            else
+                echo "INVALID PS8_RELEASE_VERSION VALUE: \$RELEASE_VER_VAL"
+            fi
+
+            git diff
+            if [[ -z \$(git diff) ]]; then
+                echo "No changes"
+            else
+                echo "There are changes"
+                git add -A
+
+                if [ "\$BRANCH_EXISTS" = true ]; then
+                    echo "Amending existing commit..."
+                    git commit --amend --no-edit
                 else
-                    echo "Branch \${AUTO_BRANCH} does not exist — creating it"
-                    git checkout -b \${AUTO_BRANCH}
-                    BRANCH_EXISTS=false
+                    echo "Creating first commit..."
+                    git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
                 fi
 
-                echo "${PS_VERSION_SHORT} is the VALUE!!@!"
-                export RELEASE_VER_VAL="${PS_VERSION_SHORT}"
+                git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/Percona-QA/package-testing.git
+                git push origin test-grishma --force
 
-                if [[ "\$RELEASE_VER_VAL" =~ ^PS8[0-9]{1}\$ ]]; then
-                    echo "\$RELEASE_VER_VAL is a valid version"
-                    OLD_REV=\$(grep ${PS_VERSION_SHORT}_REV VERSIONS | cut -d '=' -f2-)
-                    OLD_VER=\$(grep ${PS_VERSION_SHORT}_VER VERSIONS | cut -d '=' -f2-)
-                    sed -i s/${PS_VERSION_SHORT}_REV=\$OLD_REV/${PS_VERSION_SHORT}_REV='"'${PS_REVISION}'"'/g VERSIONS
-                    sed -i s/${PS_VERSION_SHORT}_VER=\$OLD_VER/${PS_VERSION_SHORT}_VER='"'${PS_RELEASE}'"'/g VERSIONS
-                else
-                    echo "INVALID PS8_RELEASE_VERSION VALUE: \$RELEASE_VER_VAL"
-                fi
-
-                git diff
-                if [[ -z \$(git diff) ]]; then
-                    echo "No changes"
-                else
-                    echo "There are changes"
-                    git add -A
-                    if [ "\$BRANCH_EXISTS" = true ]; then
-                        echo "Amending existing commit..."
-                        git commit --amend --no-edit
-                    else
-                        echo "Creating first commit..."
-                        git commit -m "Autocommit: add ${PS_REVISION} and ${PS_RELEASE} for ${PS_VERSION_SHORT} package testing VERSIONS file."
-                    fi
-                    
-                    git remote set-url origin https://jenkins-pxc-cd:\${TOKEN}@github.com/Grishma123-eng/package-testing.git
-                    git push origin \${AUTO_BRANCH} --force
-
-                     PR_EXISTS=\$(curl -s \
+                PR_EXISTS=\$(curl -s \
                     -H "Authorization: token \${TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
-                    "https://api.github.com/repos/Grishma123-eng/package-testing/pulls?head=Grishma123-eng:\${AUTO_BRANCH}&base=master&state=open" \
+                    "https://api.github.com/repos/Percona-QA/package-testing/pulls?head=Percona-QA:test-grishma&base=master&state=open" \
                     | grep -c '"number"' || true)
 
-                    if [[ "\$PR_EXISTS" -gt 0 ]]; then
-                      echo "PR already exists for \${AUTO_BRANCH} — updated with amended commit, no new PR needed"
-                    else
-                      echo "No existing PR — creating new PR" 
-                      curl -s -X POST \
-                      -H "Authorization: token \${TOKEN}" \
-                      -H "Accept: application/vnd.github.v3+json" \
-                      https://api.github.com/repos/Grishma123-eng/package-testing/pulls \
-                      -d "{\\"title\\": \\"Autocommit: VERSIONS update for ${PS_VERSION_SHORT} - ${PS_RELEASE}\\", \\"head\\": \\"\${AUTO_BRANCH}\\", \\"base\\": \\"master\\", \\"body\\": \\"Automated PR: updating VERSIONS file for ${PS_VERSION_SHORT} revision ${PS_REVISION} release ${PS_RELEASE}.\\"}"
-                    fi
+                if [[ "\$PR_EXISTS" -gt 0 ]]; then
+                    echo "PR already exists for test-grishma — updated with amended commit, no new PR needed"
+                else
+                    echo "No existing PR — creating new PR"
+                    curl -s -X POST \
+                        -H "Authorization: token \${TOKEN}" \
+                        -H "Accept: application/vnd.github.v3+json" \
+                        https://api.github.com/repos/Percona-QA/package-testing/pulls \
+                        -d "{\\"title\\": \\"Autocommit: VERSIONS update for ${PS_VERSION_SHORT} - ${PS_RELEASE}\\", \\"head\\": \\"test-grishma\\", \\"base\\": \\"master\\", \\"body\\": \\"Automated PR: updating VERSIONS file for ${PS_VERSION_SHORT} revision ${PS_REVISION} release ${PS_RELEASE}.\\"}"
                 fi
-            """
-        }
+            fi
+        """
+    }
 
         if (packageTestsClosure && dockerTestClosure) {
             parallel(
