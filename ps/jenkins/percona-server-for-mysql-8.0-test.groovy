@@ -1,7 +1,7 @@
 /* groovylint-disable DuplicateStringLiteral, GStringExpressionWithinString, LineLength */
 library changelog: false, identifier: 'lib@QA-hetzner-minitest', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
+    remote: 'https://github.com/Grishma123-eng/jenkins-pipelines.git'
 ]) _
 
 import groovy.transform.Field
@@ -104,7 +104,6 @@ void cleanUpWS() {
 }
 
 def installDependencies(def nodeName) {
-    def aptNodes = ['min-jammy-x64']
     def yumNodes = ['min-ol-8-x64']
     try{
         if (aptNodes.contains(nodeName)) {
@@ -198,7 +197,6 @@ def runPlaybook(def nodeName) {
         }
     }
 def minitestNodes = [ "min-ol-8-x64",
-                       "min-jammy-x64",
                          ]
 
 def package_tests_ps80(def nodes) {
