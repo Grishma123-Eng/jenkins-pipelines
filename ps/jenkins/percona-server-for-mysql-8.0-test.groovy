@@ -104,7 +104,7 @@ void cleanUpWS() {
 }
 
 def installDependencies(def nodeName) {
-    def yumNodes = ['min-ol-8-x64']
+    def yumNodes = ['min-ol-9-x64']
     try{
         if (aptNodes.contains(nodeName)) {
             if(nodeName == "min-bullseye-x64" || nodeName == "min-bookworm-x64"){            
@@ -130,7 +130,7 @@ def installDependencies(def nodeName) {
                     sudo yum -y update
                     sudo yum install -y ansible git wget tar
                 '''
-            }else if(nodeName == "min-ol-8-x64"){
+            }else if(nodeName == "min-ol-9-x64"){
                 sh '''
                     sudo yum install -y epel-release
                     sudo yum -y update
@@ -196,7 +196,7 @@ def runPlaybook(def nodeName) {
             }
         }
     }
-def minitestNodes = [ "min-ol-8-x64",
+def minitestNodes = [ "min-ol-9-x64",
                          ]
 
 def package_tests_ps80(def nodes) {
