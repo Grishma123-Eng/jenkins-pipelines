@@ -71,13 +71,12 @@ def call(Map args = [:]) {
                 echo "INVALID PS8_RELEASE_VERSION VALUE: \$RELEASE_VER_VAL"
             fi
 
-            git diff
-            if [[ -z \$(git diff) ]]; then
-                echo "No changes"
+            git diff HEAD
+            if [[ -z \$(git diff HEAD) ]]; then
+                echo "No changes — values already up to date, skipping"
             else
                 echo "There are changes"
                 git add -A
-
                 if [ "\$BRANCH_EXISTS" = true ]; then
                     echo "Amending existing commit..."
                     git commit --amend --no-edit
@@ -96,7 +95,7 @@ def call(Map args = [:]) {
                     | grep -c '"number"' || true)
 
                 if [[ "\$PR_EXISTS" -gt 0 ]]; then
-                    echo "PR already exists for test-grishma — updated with amended commit, no new PR needed"
+                    echo "PR already exists — updated with amended commit, no new PR needed"
                 else
                     echo "No existing PR — creating new PR"
                     curl -s -X POST \
