@@ -131,7 +131,7 @@ def runPlaybook(def nodeName) {
             } else {
                 playbook = "pxc84_bootstrap.yml"
             }
-            def client_to_test = PXC_VERSION_SHORT
+            def client_to_test = env.PXC_VERSION_SHORT
             def playbook_path = "package-testing/playbooks/${playbook}"
             sh '''
                 set -xe
@@ -156,8 +156,8 @@ def runPlaybook(def nodeName) {
             if (exitCode != 0) {
                 error "Ansible playbook failed on ${nodeName} with exit code ${exitCode}"
             }
-        }
     }
+}
 
 void cleanUpWS() {
     sh """
@@ -196,7 +196,7 @@ def BRANCH_NAME = env.BRANCH ?: "release-8.0.43-34"
 def PXC_RELEASE = BRANCH_NAME.replaceAll("release-", "")
 def PXC_VERSION_SHORT_KEY = PXC_RELEASE.tokenize('.')[0..1].join('.')
 def PXC_VERSION_SHORT = "PXC${PXC_VERSION_SHORT_KEY.replace('.', '')}"
-/*def DOCKER_ACC = "perconalab"*/
+def DOCKER_ACC = "perconalab"
 product_to_test = (PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
 env.P_RELEASE = PXC_RELEASE
 env.PXC_VERSION_SHORT_KEY = PXC_VERSION_SHORT_KEY
@@ -940,16 +940,10 @@ pipeline {
                             git push
                         fi
                     """
-             /*   if (env.FIPSMODE == 'YES') {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
-                } else {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
-                } */
-            }
-            }
+                    }
                     parallel(
-                        "Start Minitests for PS": {
-                             try {
+                        "Start Minitests for PXC": {
+                            try {
                                 package_tests_pxc80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
                                 slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
@@ -971,22 +965,21 @@ pipeline {
                                     -H "Authorization: token ${Github_Integration}" \
                                     "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
                                     -d '{"ref":"main","inputs":{"ps_version":"${env.PXC_RELEASE}"}}'
-                                    """ 
-                                    }
+                                    """
+                                }
                                 slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
                             } catch (err) {
-                                    echo " Minitests block failed: ${err}"
-                                    currentBuild.result = 'FAILURE'
-                                    throw err
-                                }
+                                echo " Minitests block failed: ${err}"
+                                currentBuild.result = 'FAILURE'
+                                throw err
+                            }
                         }
-                         )          
-                }    
-                        else{
-                            error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
-                        }
-                    }
+                    )
+                } else {
+                    error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
+                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                }
+            }
             deleteDir()
         }
         failure {
