@@ -95,16 +95,33 @@ def installDependencies(def nodeName) {
     }
 
 }
+def loadPxcPropertiesFromFile() {
+    def propsFile = 'test/pxc-80.properties'
+    sh "cat ${propsFile}"
+    env.PXC_REVISION = sh(returnStdout: true, script: "grep '^REVISION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_INNODB = sh(returnStdout: true, script: "grep '^MYSQL_RELEASE=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    def wsrepVersion = sh(returnStdout: true, script: "grep '^WSREP_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    def wsrepRev = sh(returnStdout: true, script: "grep '^WSREP_REV=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_WSREP = "${wsrepVersion}(${wsrepRev})"
+    def mysqlVersion = sh(returnStdout: true, script: "grep '^MYSQL_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_RELEASE = "${mysqlVersion}-${env.PXC_INNODB}"
+    env.PXC_VERSION_SHORT_KEY = env.PXC_RELEASE.tokenize('.')[0..1].join('.')
+    env.PXC_VERSION_SHORT = "PXC${env.PXC_VERSION_SHORT_KEY.replace('.', '')}"
+    env.product_to_test = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
+    echo "PXC_RELEASE: ${env.PXC_RELEASE}"
+    echo "PXC_REVISION: ${env.PXC_REVISION}"
+    echo "PXC_INNODB: ${env.PXC_INNODB}"
+    echo "PXC_WSREP: ${env.PXC_WSREP}"
+    echo "PXC_VERSION_SHORT: ${env.PXC_VERSION_SHORT}"
+}
+
 def runPlaybook(def nodeName) {
     script {
-            env.PXC_RELEASE = sh(returnStdout: true, script: "echo ${BRANCH} | sed 's/release-//g'").trim()
-            echo "PXC_RELEASE : ${env.PXC_RELEASE}"
-            env.PXC_VERSION_SHORT_KEY=  sh(script: """echo ${PXC_RELEASE} | awk -F'.' '{print \$1 \".\" \$2}'""", returnStdout: true).trim()
-            echo "Version is : ${env.PXC_VERSION_SHORT_KEY}"
-            echo "fetching docker version: \$fetched_docker_version"   
-            env.PXC_VERSION_SHORT = "PS${env.PXC_VERSION_SHORT_KEY.replace('.', '')}"
-            echo "Value is : ${env.PXC_VERSION_SHORT}"
-            echo "Run succesfully for amd"         
+            if (!env.PXC_REVISION) {
+                loadPxcPropertiesFromFile()
+            }
+            echo "fetching docker version: \$fetched_docker_version"
+            echo "Run succesfully for amd"
             echo "Using PXC_VERSION_SHORT in another function: ${env.PXC_VERSION_SHORT}"
             def playbook
             if (env.PXC_VERSION_SHORT == 'PXC80') {
@@ -123,7 +140,7 @@ def runPlaybook(def nodeName) {
                     set -xe
                     export install_repo="\${install_repo}"
                     echo "ran succesfully for amd docker trivy"   
-                    export client_to_test="ps80"
+                    export client_to_test="PXC80"
                     export check_warning="\${check_warnings}"
                     export install_mysql_shell="${env.INSTALL_MYSQL_SHELL}"
                     ansible-playbook \
@@ -183,9 +200,9 @@ def install_mysql_shell = 'no'
 def BRANCH_NAME = env.BRANCH ?: "release-8.0.43-34"
 def PXC_RELEASE = BRANCH_NAME.replaceAll("release-", "")
 def PXC_VERSION_SHORT_KEY = PXC_RELEASE.tokenize('.')[0..1].join('.')
-def PXC_VERSION_SHORT = "PS${PXC_VERSION_SHORT_KEY.replace('.', '')}"
+def PXC_VERSION_SHORT = "PXC${PXC_VERSION_SHORT_KEY.replace('.', '')}"
 /*def DOCKER_ACC = "perconalab"*/
-product_to_test = (PXC_VERSION_SHORT == 'PXC84') ? 'pxc_84' : 'pxc_80'
+product_to_test = (PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
 env.P_RELEASE = PXC_RELEASE
 env.PXC_VERSION_SHORT_KEY = PXC_VERSION_SHORT_KEY
 env.PXC_VERSION_SHORT = PXC_VERSION_SHORT
@@ -279,10 +296,11 @@ pipeline {
                 }
                 stash includes: 'test/pxc-80.properties', name: 'pxc-80.properties'
                 stash includes: 'uploadPath', name: 'uploadPath'
-                pushArtifactFolder(params.CLOUD, "source_tarball/", AWS_STASH_PATH)
-                uploadTarballfromAWS(params.CLOUD, "source_tarball/", AWS_STASH_PATH, 'source')
+               // pushArtifactFolder(params.CLOUD, "source_tarball/", AWS_STASH_PATH)
+                //uploadTarballfromAWS(params.CLOUD, "source_tarball/", AWS_STASH_PATH, 'source')
             }
         }
+        /*
         stage('Build PXC generic source packages') {
             parallel {
                 stage('Build PXC generic source rpm') {
@@ -862,18 +880,118 @@ pipeline {
                           wait: false
                 }
             }
-        }
+        } */
     }
     post {
         success {
             script {
                 echo "testing"
+                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
+                unstash 'pxc-80.properties'
+                loadPxcPropertiesFromFile()
+                echo "Revision is: ${env.PXC_REVISION}"
+                echo "PXC_RELEASE is: ${env.PXC_RELEASE}"
+                echo "PXC_INNODB is: ${env.PXC_INNODB}"
+                echo "PXC_WSREP is: ${env.PXC_WSREP}"
+                echo "PXC_VERSION_SHORT_KEY is: ${env.PXC_VERSION_SHORT_KEY}"
+                echo "Value is : ${env.PXC_VERSION_SHORT}"
+                echo "DOCKER account is : ${DOCKER_ACC}"
+
+                if (env.product_to_test == 'pxc80') {
+                    echo "Running PXC80-specific steps"
+                } else if (env.product_to_test == 'pxc84') {
+                    echo "Running PXC84-specific steps"
+                } else {
+                    echo "Running client test"
+                }
+                 if("${env.PXC_VERSION_SHORT}"){
+                    echo "Executing MINITESTS as VALID VALUES FOR PXC8_RELEASE_VERSION:${env.PXC_VERSION_SHORT}"
+                    echo "Checking for the Github Repo VERSIONS file changes..."
+                    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
+                    sh """
+                        set -x
+                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/Percona-QA/package-testing.git
+                        cd package-testing
+                        git config user.name "jenkins-pxc-cd"
+                        git config user.email "it+jenkins-pxc-cd@percona.com"
+                        git checkout testing-branch
+                        echo "${env.PXC_VERSION_SHORT} is the VALUE!!@!"
+                        export RELEASE_VER_VAL="${env.PXC_VERSION_SHORT}"
+                        if [[ "\$RELEASE_VER_VAL" =~ ^PXC8[0-9]{1}\$ ]]; then
+                            echo "\$RELEASE_VER_VAL is a valid version"
+                            OLD_REV=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_REV | cut -d '=' -f2- )
+                            echo "OLD_REV is : \${OLD_REV}"
+                            OLD_VER=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_VER | cut -d '=' -f2- )
+                            echo "OLD_VER is : \${OLD_VER}"
+                            OLD_INNODB=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_INNODB | cut -d '=' -f2- )
+                            echo "OLD_INNODB is : \${OLD_INNODB}"
+                            OLD_WSREP=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_WSREP | cut -d '=' -f2- )
+                            echo "OLD_WSREP is : \${OLD_WSREP}"
+                            sed -i s/${env.PXC_VERSION_SHORT}_REV=\$OLD_REV/${env.PXC_VERSION_SHORT}_REV='"'${env.PXC_REVISION}'"'/g VERSIONS
+                            sed -i s/${env.PXC_VERSION_SHORT}_VER=\$OLD_VER/${env.PXC_VERSION_SHORT}_VER='"'${env.PXC_RELEASE}'"'/g VERSIONS
+                            sed -i s/${env.PXC_VERSION_SHORT}_INNODB=\$OLD_INNODB/${env.PXC_VERSION_SHORT}_INNODB='"'${env.PXC_INNODB}'"'/g VERSIONS
+                            sed -i s/${env.PXC_VERSION_SHORT}_WSREP=\$OLD_WSREP/${env.PXC_VERSION_SHORT}_WSREP='"'${env.PXC_WSREP}'"'/g VERSIONS
+
+                        else
+                            echo "INVALID PXC8_RELEASE_VERSION VALUE: ${env.PXC_VERSION_SHORT}"
+                        fi
+                        git diff
+                        if [[ -z \$(git diff) ]]; then
+                            echo "No changes"
+                        else
+                            echo "There are changes"
+                            git add -A
+                        git commit -m "Autocommit: add ${env.PXC_REVISION}, ${env.PXC_RELEASE}, ${env.PXC_INNODB}, and ${env.PXC_WSREP} for ${env.PXC_VERSION_SHORT} package testing VERSIONS file."
+                            git push
+                        fi
+                    """
              /*   if (env.FIPSMODE == 'YES') {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
                 } else {
                     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
                 } */
             }
+            }
+                    parallel(
+                        "Start Minitests for PS": {
+                             try {
+                                package_tests_pxc80(minitestNodes)
+                                echo "Minitests completed successfully. Triggering next stages."
+                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                                echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
+                                build job: 'pxc-package-testing', propagate: false, wait: false, parameters: [
+                                    string(name: 'product_to_test', value: "${env.product_to_test}"),
+                                    string(name: 'node_to_test', value: 'ubuntu-jammy'),
+                                    string(name: 'test_repo', value: 'testing'),
+                                    string(name: 'test_type', value: 'install'),
+                                    string(name: 'pxc57_repo', value: 'N/A'),
+                                    string(name: 'git_repo', value: 'Percona-QA/package-testing'),
+                                    string(name: 'BRANCH', value: 'master'),
+                                ]
+                                echo "Trigger PMM_PS Github Actions Workflow"
+                                withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
+                                    sh """
+                                    curl -i -v -X POST \
+                                    -H "Accept: application/vnd.github.v3+json" \
+                                    -H "Authorization: token ${Github_Integration}" \
+                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                    -d '{"ref":"main","inputs":{"ps_version":"${env.PXC_RELEASE}"}}'
+                                    """ 
+                                    }
+                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                            } catch (err) {
+                                    echo " Minitests block failed: ${err}"
+                                    currentBuild.result = 'FAILURE'
+                                    throw err
+                                }
+                        }
+                         )          
+                }    
+                        else{
+                            error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
+                            slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                        }
+                    }
             deleteDir()
         }
         failure {
