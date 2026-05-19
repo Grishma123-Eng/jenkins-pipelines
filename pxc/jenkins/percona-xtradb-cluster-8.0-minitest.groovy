@@ -204,57 +204,26 @@ env.PXC_VERSION_SHORT = PXC_VERSION_SHORT
 env.DOCKER_ACC = DOCKER_ACC
 env.product_to_test = product_to_test
 
+// Register parameters at script load so Jenkins shows "Build with Parameters"
+properties([
+    parameters([
+        choice(name: 'CLOUD', choices: ['Hetzner', 'AWS'], description: 'Cloud infra for build'),
+        string(name: 'GIT_REPO', defaultValue: 'https://github.com/percona/percona-xtradb-cluster.git', description: 'URL for percona-xtradb-cluster repository'),
+        string(name: 'GIT_BRANCH', defaultValue: '8.0', description: 'Tag/Branch for percona-xtradb-cluster repository'),
+        string(name: 'RPM_RELEASE', defaultValue: '1', description: 'RPM release value'),
+        string(name: 'DEB_RELEASE', defaultValue: '1', description: 'DEB release value'),
+        string(name: 'BIN_RELEASE', defaultValue: '1', description: 'BIN release value'),
+        booleanParam(name: 'SKIP_OL10', defaultValue: false, description: 'Skips packages for OL10'),
+        booleanParam(name: 'SKIP_TRIXIE', defaultValue: false, description: 'Skips packages for Debian 13'),
+        choice(name: 'FIPSMODE', choices: ['NO', 'YES'], description: 'Enable fipsmode'),
+        choice(name: 'COMPONENT', choices: ['testing', 'experimental', 'laboratory'], description: 'Repo component to push packages to'),
+        choice(name: 'SLACKNOTIFY', choices: ['#releases-ci', '#releases'], description: 'Channel for notifications'),
+    ])
+])
+
 pipeline {
     agent {
-        label params.CLOUD == 'Hetzner' ? 'docker-x64' : 'docker-32gb'
-    }
-    parameters {
-        choice(
-             choices: [ 'Hetzner','AWS' ],
-             description: 'Cloud infra for build',
-             name: 'CLOUD' )
-        string(
-            defaultValue: 'https://github.com/percona/percona-xtradb-cluster.git',
-            description: 'URL for percona-xtradb-cluster repository',
-            name: 'GIT_REPO')
-        string(
-            defaultValue: '8.0',
-            description: 'Tag/Branch for percona-xtradb-cluster repository',
-            name: 'GIT_BRANCH')
-        string(
-            defaultValue: '1',
-            description: 'RPM release value',
-            name: 'RPM_RELEASE')
-        string(
-            defaultValue: '1',
-            description: 'DEB release value',
-            name: 'DEB_RELEASE')
-        string(
-            defaultValue: '1',
-            description: 'BIN release value',
-            name: 'BIN_RELEASE')
-        booleanParam(
-            defaultValue: false,
-            description: "Skips packages for OL10",
-            name: 'SKIP_OL10'
-        )
-        booleanParam(
-            defaultValue: false,
-            description: "Skips packages for Debian 13",
-            name: 'SKIP_TRIXIE'
-        )
-        choice(
-            choices: 'NO\nYES',
-            description: 'Enable fipsmode',
-            name: 'FIPSMODE')
-        choice(
-            choices: 'testing\nexperimental\nlaboratory',
-            description: 'Repo component to push packages to',
-            name: 'COMPONENT')
-        choice(
-            choices: '#releases-ci\n#releases',
-            description: 'Channel for notifications',
-            name: 'SLACKNOTIFY')
+        label 'docker-32gb'
     }
     options {
         skipDefaultCheckout()
