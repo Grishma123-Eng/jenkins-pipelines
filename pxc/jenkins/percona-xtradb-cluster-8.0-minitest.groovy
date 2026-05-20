@@ -1,6 +1,6 @@
 library changelog: false, identifier: 'lib@pxc-minitest', retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/grishma23-eng/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ]) _
 
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
