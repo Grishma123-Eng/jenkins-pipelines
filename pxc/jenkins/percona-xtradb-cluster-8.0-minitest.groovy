@@ -5,7 +5,6 @@ library changelog: false, identifier: 'lib@pxc-minitest', retriever: modernSCM([
 
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
-        withCredentials([usernamePassword(credentialsId: 'PXC_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
             sh """
                 set -o xtrace
                 mkdir -p test
@@ -41,7 +40,6 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
             """
         }
     }
-}
 
 def installDependencies(def nodeName) {
     def aptNodes = ['min-jammy-x64']
