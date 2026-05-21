@@ -190,7 +190,7 @@ def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
 def install_mysql_shell = 'no'
-def BRANCH_NAME = env.BRANCH ?: "release-8.0.43-34"
+def BRANCH_NAME = "release-8.0.43-34"
 def PXC_RELEASE = BRANCH_NAME.replaceAll("release-", "")
 def PXC_VERSION_SHORT_KEY = PXC_RELEASE.tokenize('.')[0..1].join('.')
 def PXC_VERSION_SHORT = "PXC${PXC_VERSION_SHORT_KEY.replace('.', '')}"
@@ -238,12 +238,12 @@ pipeline {
            /*     slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: starting build for ${GIT_BRANCH} - [${BUILD_URL}]") */
                 cleanUpWS()
                 script {
-                    if (env.FIPSMODE == 'YES') {
-                        buildStage("centos:7", "--get_sources=1 --enable_fipsmode=1")
-                    } else {
-                        buildStage("centos:7", "--get_sources=1")
-                    }
-                }
+                            if (env.FIPSMODE == 'YES') {
+                                buildStage("none", "--get_sources=1 --enable_fipsmode=1")
+                            } else {
+                                buildStage("none", "--get_sources=1")
+                            }
+                       }
                 sh '''
                    REPO_UPLOAD_PATH=$(grep "DEST=UPLOAD" test/pxc-80.properties | cut -d = -f 2 | sed "s:$:${BUILD_NUMBER}:")
                    AWS_STASH_PATH=$(echo ${REPO_UPLOAD_PATH} | sed  "s:UPLOAD/experimental/::")
@@ -254,7 +254,7 @@ pipeline {
                    cat awsUploadPath
                 '''
                 script {
-                    AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
+                    env.AWS_STASH_PATH = sh(returnStdout: true, script: "cat awsUploadPath").trim()
                 }
                 stash includes: 'test/pxc-80.properties', name: 'pxc-80.properties'
                 stash includes: 'uploadPath', name: 'uploadPath'
@@ -833,7 +833,7 @@ pipeline {
                           parameters: [
                               string(name: 'CLOUD', value: 'Hetzner'),
                               string(name: 'ORGANIZATION', value: 'perconalab'),
-                              string(name: 'GIT_BRANCH', value: "${GIT_BRANCH}"),
+                              string(name: 'GIT_BRANCH', value: "${params.GIT_BRANCH}"),
                               string(name: 'RPM_RELEASE', value: '1'),
                               string(name: 'DEB_RELEASE', value: '1'),
                               string(name: 'FIPSMODE', value: 'NO'),
@@ -848,7 +848,7 @@ pipeline {
         success {
             script {
                 echo "testing"
-                 currentBuild.description = "Built on ${BRANCH}; path to packages: ${COMPONENT}/${AWS_STASH_PATH}"
+                 currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
                 unstash 'pxc-80.properties'
                 loadPxcPropertiesFromFile()
                 echo "Revision is: ${env.PXC_REVISION}"
@@ -913,7 +913,7 @@ pipeline {
                             try {
                                 package_tests_pxc80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
-                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: minitest sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                                slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: minitest sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'pxc-package-testing', propagate: false, wait: false, parameters: [
                                     string(name: 'product_to_test', value: "${env.product_to_test}"),
@@ -934,7 +934,7 @@ pipeline {
                                     -d '{"ref":"main","inputs":{"ps_version":"${env.PXC_RELEASE}"}}'
                                     """
                                 }
-                                slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: PMM sucessfully run for ${BRANCH} - [${BUILD_URL}]")
+                                slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: PMM sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                             } catch (err) {
                                 echo " Minitests block failed: ${err}"
                                 currentBuild.result = 'FAILURE'
@@ -944,7 +944,7 @@ pipeline {
                     )
                 } else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${BRANCH} - [${BUILD_URL}]")
+                    slackNotify("${params.SLACKNOTIFY}", "#00FF00", "[${env.JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                 }
             }
             deleteDir()
@@ -966,9 +966,9 @@ pipeline {
             '''
             script {
                 if (env.FIPSMODE == 'YES') {
-                    currentBuild.description = "PRO -> Built on ${GIT_BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
+                    currentBuild.description = "PRO -> Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
                 } else {
-                    currentBuild.description = "Built on ${GIT_BRANCH} - packages [${COMPONENT}/${AWS_STASH_PATH}]"
+                    currentBuild.description = "Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
                 }
             }
             deleteDir()
