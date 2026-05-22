@@ -133,15 +133,6 @@ def setPxcVersionEnv() {
     echo "GIT_BRANCH=${branch} -> PXC_RELEASE=${env.PXC_RELEASE}, PXC_VERSION_SHORT=${env.PXC_VERSION_SHORT}, product_to_test=${env.product_to_test}"
 }
 
-def runMinitestsOnly() {
-    setPxcVersionEnv()
-    parallel(
-        "Start Minitests for PXC": {
-            package_tests_pxc80(minitestNodes)
-        }
-    )
-}
-
 def runPlaybook(def nodeName) {
     script {
             if (!env.PXC_VERSION_SHORT) {
@@ -226,7 +217,6 @@ properties([
         choice(name: 'FIPSMODE', choices: ['NO', 'YES'], description: 'Enable fipsmode'),
         choice(name: 'COMPONENT', choices: ['testing', 'experimental', 'laboratory'], description: 'Repo component to push packages to'),
         choice(name: 'SLACKNOTIFY', choices: ['#releases-ci', '#releases'], description: 'Channel for notifications'),
-        booleanParam(name: 'RUN_MINITEST_ONLY', defaultValue: true, description: 'Skip PXC build/docker; run ansible minitests only'),
     ])
 ])
 
@@ -242,9 +232,6 @@ pipeline {
     }
     stages {
         stage('Create PXC source tarball') {
-            when {
-                expression { !params.RUN_MINITEST_ONLY }
-            }
             agent {
                label params.CLOUD == 'Hetzner' ? 'deb12-x64' : 'min-focal-x64'
             }
@@ -857,28 +844,10 @@ pipeline {
                 }
             }
         } */
-        stage('Run minitests only') {
-            when {
-                expression { params.RUN_MINITEST_ONLY }
-            }
-            agent {
-                label 'docker-32gb'
-            }
-            steps {
-                script {
-                    currentBuild.description = "Minitest only (no docker build) on ${params.GIT_BRANCH}"
-                    runMinitestsOnly()
-                }
-            }
-        }
     }
     post {
         success {
             script {
-                if (params.RUN_MINITEST_ONLY) {
-                    echo "Minitests finished in Run minitests only stage"
-                    return
-                }
                 echo "testing"
                  currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
                 unstash 'pxc-80.properties'
@@ -997,9 +966,7 @@ pipeline {
                 sudo rm -rf ./*
             '''
             script {
-                if (params.RUN_MINITEST_ONLY) {
-                    currentBuild.description = "Minitest only on ${params.GIT_BRANCH}"
-                } else if (env.FIPSMODE == 'YES') {
+                if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
