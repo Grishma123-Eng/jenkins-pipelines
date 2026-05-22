@@ -5,29 +5,35 @@ library changelog: false, identifier: 'lib@pxc-minitest', retriever: modernSCM([
 
 void buildStage(String DOCKER_OS, String STAGE_PARAM) {
     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
-            sh """
-                set -o xtrace
-                mkdir -p test
-                if [ \${FIPSMODE} = "YES" ]; then
-                    PXC_VERSION_MINOR=\$(curl -s -O \$(echo \${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/\${GIT_BRANCH}/MYSQL_VERSION && cat MYSQL_VERSION | grep MYSQL_VERSION_MINOR | awk -F= '{print \$2}')
-                    if [ \${PXC_VERSION_MINOR} = "0" ]; then
-                        PRO_BRANCH="8.0"
-                    elif [ \${PXC_VERSION_MINOR} = "4" ]; then
-                        PRO_BRANCH="8.4"
-                    else
-                        PRO_BRANCH="trunk"
-                    fi
-                    curl -L -H "Authorization: Bearer \${TOKEN}" \
-                        -H "Accept: application/vnd.github.v3.raw" \
-                        -o pxc_builder.sh \
-                        "https://api.github.com/repos/percona/percona-xtradb-cluster-private-build/contents/build-ps/pxc_builder.sh?ref=\${PRO_BRANCH}"
-                    sed -i "s/PRIVATE_USERNAME/\${USERNAME}/g" pxc_builder.sh
-                    sed -i "s/PRIVATE_TOKEN/\${PASSWORD}/g" pxc_builder.sh
+        sh """
+            set -o xtrace
+            mkdir -p test
+            if [ \${FIPSMODE} = "YES" ]; then
+                PXC_VERSION_MINOR=\$(curl -s -O \$(echo \${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/\${GIT_BRANCH}/MYSQL_VERSION && cat MYSQL_VERSION | grep MYSQL_VERSION_MINOR | awk -F= '{print \$2}')
+                if [ \${PXC_VERSION_MINOR} = "0" ]; then
+                    PRO_BRANCH="8.0"
+                elif [ \${PXC_VERSION_MINOR} = "4" ]; then
+                    PRO_BRANCH="8.4"
                 else
-                    wget \$(echo ${GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${GIT_BRANCH}/build-ps/pxc_builder.sh -O pxc_builder.sh
+                    PRO_BRANCH="trunk"
                 fi
-                pwd -P
-                export build_dir=\$(pwd -P)
+                curl -L -H "Authorization: Bearer \${TOKEN}" \
+                    -H "Accept: application/vnd.github.v3.raw" \
+                    -o pxc_builder.sh \
+                    "https://api.github.com/repos/percona/percona-xtradb-cluster-private-build/contents/build-ps/pxc_builder.sh?ref=\${PRO_BRANCH}"
+            else
+                wget \$(echo ${params.GIT_REPO} | sed -re 's|github.com|raw.githubusercontent.com|; s|\\.git\$||')/${params.GIT_BRANCH}/build-ps/pxc_builder.sh -O pxc_builder.sh
+            fi
+            export build_dir=\$(pwd -P)
+            if [ "${DOCKER_OS}" = "none" ]; then
+                cd \${build_dir}
+                sudo bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --install_deps=1
+                if [ \${FIPSMODE} = "YES" ]; then
+                    git clone --depth 1 --branch \${PRO_BRANCH} https://x-access-token:${TOKEN}@github.com/percona/percona-xtradb-cluster-private-build.git percona-xtradb-cluster-private-build
+                    mv -f \${build_dir}/percona-xtradb-cluster-private-build/build-ps \${build_dir}/test/.
+                fi
+                sudo bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --repo=${params.GIT_REPO} --branch=${params.GIT_BRANCH} --rpm_release=${params.RPM_RELEASE} --deb_release=${params.DEB_RELEASE} --bin_release=${params.BIN_RELEASE} ${STAGE_PARAM}
+            else
                 docker run -u root -v \${build_dir}:\${build_dir} ${DOCKER_OS} sh -c "
                     set -o xtrace
                     cd \${build_dir}
@@ -36,10 +42,11 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
                         git clone --depth 1 --branch \${PRO_BRANCH} https://x-access-token:${TOKEN}@github.com/percona/percona-xtradb-cluster-private-build.git percona-xtradb-cluster-private-build
                         mv -f \${build_dir}/percona-xtradb-cluster-private-build/build-ps \${build_dir}/test/.
                     fi
-                    bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --repo=${GIT_REPO} --branch=${GIT_BRANCH} --rpm_release=${RPM_RELEASE} --deb_release=${DEB_RELEASE} --bin_release=${BIN_RELEASE} ${STAGE_PARAM}"
-            """
-        }
+                    bash -x ./pxc_builder.sh --builddir=\${build_dir}/test --repo=${params.GIT_REPO} --branch=${params.GIT_BRANCH} --rpm_release=${params.RPM_RELEASE} --deb_release=${params.DEB_RELEASE} --bin_release=${params.BIN_RELEASE} ${STAGE_PARAM}"
+            fi
+        """
     }
+}
 
 def installDependencies(def nodeName) {
     def aptNodes = ['min-jammy-x64']
@@ -115,22 +122,35 @@ def loadPxcPropertiesFromFile() {
     echo "PXC_VERSION_SHORT: ${env.PXC_VERSION_SHORT}"
 }
 
+def setPxcVersionEnv() {
+    def branch = params.GIT_BRANCH.trim()
+    def release = branch.replaceAll('^release-', '')
+    env.PXC_RELEASE = release
+    def parts = release.tokenize('.')
+    env.PXC_VERSION_SHORT_KEY = parts.size() >= 2 ? parts[0..1].join('.') : release
+    env.PXC_VERSION_SHORT = "PXC${env.PXC_VERSION_SHORT_KEY.replace('.', '')}"
+    env.product_to_test = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
+    echo "GIT_BRANCH=${branch} -> PXC_RELEASE=${env.PXC_RELEASE}, PXC_VERSION_SHORT=${env.PXC_VERSION_SHORT}, product_to_test=${env.product_to_test}"
+}
+
+def runMinitestsOnly() {
+    setPxcVersionEnv()
+    parallel(
+        "Start Minitests for PXC": {
+            package_tests_pxc80(minitestNodes)
+        }
+    )
+}
+
 def runPlaybook(def nodeName) {
     script {
-            if (!env.PXC_REVISION) {
-                loadPxcPropertiesFromFile()
+            if (!env.PXC_VERSION_SHORT) {
+                setPxcVersionEnv()
             }
-            echo "fetching docker version: \$fetched_docker_version"
-            echo "Run succesfully for amd"
-            echo "Using PXC_VERSION_SHORT in another function: ${env.PXC_VERSION_SHORT}"
-            def playbook
-            if (env.PXC_VERSION_SHORT == 'PXC80') {
-                playbook = "pxc80_bootstrap.yml"
-            } else {
-                playbook = "pxc84_bootstrap.yml"
-            }
-            def client_to_test = env.PXC_VERSION_SHORT
+            echo "Minitest on ${nodeName}: PXC_VERSION_SHORT=${env.PXC_VERSION_SHORT}, product_to_test=${env.product_to_test}"
+            def playbook = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84_bootstrap.yml' : 'pxc80_bootstrap.yml'
             def playbook_path = "package-testing/playbooks/${playbook}"
+            def clientLabel = env.product_to_test
             sh '''
                 set -xe
                 git clone --depth 1 https://github.com/Percona-QA/package-testing
@@ -138,11 +158,10 @@ def runPlaybook(def nodeName) {
             def exitCode = sh(
                 script: """
                     set -xe
-                    export install_repo="\${install_repo}"
-                    echo "ran succesfully for amd docker trivy"   
-                    export client_to_test="PXC80"
-                    export check_warning="\${check_warnings}"
-                    export install_mysql_shell="${env.INSTALL_MYSQL_SHELL}"
+                    export install_repo="${install_repo}"
+                    export client_to_test="${clientLabel}"
+                    export check_warnings="${check_warnings}"
+                    export install_mysql_shell="${install_mysql_shell}"
                     ansible-playbook \
                         --connection=local \
                         --inventory 127.0.0.1, \
@@ -190,24 +209,15 @@ def install_repo = 'testing'
 def action_to_test = 'install'
 def check_warnings = 'yes'
 def install_mysql_shell = 'no'
-def BRANCH_NAME = "release-8.0.43-34"
-def PXC_RELEASE = BRANCH_NAME.replaceAll("release-", "")
-def PXC_VERSION_SHORT_KEY = PXC_RELEASE.tokenize('.')[0..1].join('.')
-def PXC_VERSION_SHORT = "PXC${PXC_VERSION_SHORT_KEY.replace('.', '')}"
 def DOCKER_ACC = "perconalab"
-product_to_test = (PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
-env.P_RELEASE = PXC_RELEASE
-env.PXC_VERSION_SHORT_KEY = PXC_VERSION_SHORT_KEY
-env.PXC_VERSION_SHORT = PXC_VERSION_SHORT
 env.DOCKER_ACC = DOCKER_ACC
-env.product_to_test = product_to_test
 
 // Register parameters at script load so Jenkins shows "Build with Parameters"
 properties([
     parameters([
         choice(name: 'CLOUD', choices: ['Hetzner', 'AWS'], description: 'Cloud infra for build'),
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/percona/percona-xtradb-cluster.git', description: 'URL for percona-xtradb-cluster repository'),
-        string(name: 'GIT_BRANCH', defaultValue: '8.0', description: 'Tag/Branch for percona-xtradb-cluster repository'),
+        string(name: 'GIT_BRANCH', defaultValue: 'release-8.0.45-36', description: 'PXC git branch (e.g. 8.0 or release-8.0.45-36)'),
         string(name: 'RPM_RELEASE', defaultValue: '1', description: 'RPM release value'),
         string(name: 'DEB_RELEASE', defaultValue: '1', description: 'DEB release value'),
         string(name: 'BIN_RELEASE', defaultValue: '1', description: 'BIN release value'),
@@ -216,6 +226,7 @@ properties([
         choice(name: 'FIPSMODE', choices: ['NO', 'YES'], description: 'Enable fipsmode'),
         choice(name: 'COMPONENT', choices: ['testing', 'experimental', 'laboratory'], description: 'Repo component to push packages to'),
         choice(name: 'SLACKNOTIFY', choices: ['#releases-ci', '#releases'], description: 'Channel for notifications'),
+        booleanParam(name: 'RUN_MINITEST_ONLY', defaultValue: true, description: 'Skip PXC build/docker; run ansible minitests only'),
     ])
 ])
 
@@ -231,6 +242,9 @@ pipeline {
     }
     stages {
         stage('Create PXC source tarball') {
+            when {
+                expression { !params.RUN_MINITEST_ONLY }
+            }
             agent {
                label params.CLOUD == 'Hetzner' ? 'deb12-x64' : 'min-focal-x64'
             }
@@ -843,10 +857,28 @@ pipeline {
                 }
             }
         } */
+        stage('Run minitests only') {
+            when {
+                expression { params.RUN_MINITEST_ONLY }
+            }
+            agent {
+                label 'docker-32gb'
+            }
+            steps {
+                script {
+                    currentBuild.description = "Minitest only (no docker build) on ${params.GIT_BRANCH}"
+                    runMinitestsOnly()
+                }
+            }
+        }
     }
     post {
         success {
             script {
+                if (params.RUN_MINITEST_ONLY) {
+                    echo "Minitests finished in Run minitests only stage"
+                    return
+                }
                 echo "testing"
                  currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
                 unstash 'pxc-80.properties'
@@ -857,7 +889,7 @@ pipeline {
                 echo "PXC_WSREP is: ${env.PXC_WSREP}"
                 echo "PXC_VERSION_SHORT_KEY is: ${env.PXC_VERSION_SHORT_KEY}"
                 echo "Value is : ${env.PXC_VERSION_SHORT}"
-                echo "DOCKER account is : ${DOCKER_ACC}"
+                echo "DOCKER account is : ${env.DOCKER_ACC}"
 
                 if (env.product_to_test == 'pxc80') {
                     echo "Running PXC80-specific steps"
@@ -965,7 +997,9 @@ pipeline {
                 sudo rm -rf ./*
             '''
             script {
-                if (env.FIPSMODE == 'YES') {
+                if (params.RUN_MINITEST_ONLY) {
+                    currentBuild.description = "Minitest only on ${params.GIT_BRANCH}"
+                } else if (env.FIPSMODE == 'YES') {
                     currentBuild.description = "PRO -> Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
                 } else {
                     currentBuild.description = "Built on ${params.GIT_BRANCH} - packages [${params.COMPONENT}/${env.AWS_STASH_PATH}]"
