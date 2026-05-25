@@ -890,10 +890,10 @@ pipeline {
                             echo "OLD_INNODB is : \${OLD_INNODB}"
                             OLD_WSREP=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_WSREP | cut -d '=' -f2- )
                             echo "OLD_WSREP is : \${OLD_WSREP}"
-                            sed -i s/${env.PXC_VERSION_SHORT}_REV=\$OLD_REV/${env.PXC_VERSION_SHORT}_REV='"'${env.PXC_REVISION}'"'/g VERSIONS
-                            sed -i s/${env.PXC_VERSION_SHORT}_VER=\$OLD_VER/${env.PXC_VERSION_SHORT}_VER='"'${env.PXC_RELEASE}'"'/g VERSIONS
-                            sed -i s/${env.PXC_VERSION_SHORT}_INNODB=\$OLD_INNODB/${env.PXC_VERSION_SHORT}_INNODB='"'${env.PXC_INNODB}'"'/g VERSIONS
-                            sed -i s/${env.PXC_VERSION_SHORT}_WSREP=\$OLD_WSREP/${env.PXC_VERSION_SHORT}_WSREP='"'${env.PXC_WSREP}'"'/g VERSIONS
+                            sed -i "s|^${env.PXC_VERSION_SHORT}_REV=.*|${env.PXC_VERSION_SHORT}_REV='${env.PXC_REVISION}'|g" VERSIONS
+                            sed -i "s|^${env.PXC_VERSION_SHORT}_VER=.*|${env.PXC_VERSION_SHORT}_VER='${env.PXC_RELEASE}'|g" VERSIONS
+                            sed -i "s|^${env.PXC_VERSION_SHORT}_INNODB=.*|${env.PXC_VERSION_SHORT}_INNODB='${env.PXC_INNODB}'|g" VERSIONS
+                            sed -i "s|^${env.PXC_VERSION_SHORT}_WSREP=.*|${env.PXC_VERSION_SHORT}_WSREP='${env.PXC_WSREP}'|g" VERSIONS
 
                         else
                             echo "INVALID PXC8_RELEASE_VERSION VALUE: ${env.PXC_VERSION_SHORT}"
