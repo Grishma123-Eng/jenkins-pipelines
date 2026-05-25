@@ -109,7 +109,7 @@ def loadPxcPropertiesFromFile() {
     env.PXC_INNODB = sh(returnStdout: true, script: "grep '^MYSQL_RELEASE=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     def wsrepVersion = sh(returnStdout: true, script: "grep '^WSREP_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     def wsrepRev = sh(returnStdout: true, script: "grep '^WSREP_REV=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
-    env.PXC_WSREP = "${wsrepVersion}(${wsrepRev})"
+    env.PXC_WSREP = "${wsrepVersion.tokenize('.')[0..1].join('.')}(${wsrepRev})"
     def mysqlVersion = sh(returnStdout: true, script: "grep '^MYSQL_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     env.PXC_RELEASE = "${mysqlVersion}-${env.PXC_INNODB}"
     env.PXC_VERSION_SHORT_KEY = env.PXC_RELEASE.tokenize('.')[0..1].join('.')
