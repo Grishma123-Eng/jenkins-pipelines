@@ -905,7 +905,7 @@ pipeline {
                             echo "There are changes"
                             git add -A
                         git commit -m "Autocommit: add ${env.PXC_REVISION}, ${env.PXC_RELEASE}, ${env.PXC_INNODB}, and ${env.PXC_WSREP} for ${env.PXC_VERSION_SHORT} package testing VERSIONS file."
-                            git push
+                            git push origin testing-branch
                         fi
                     """
                     }
@@ -926,16 +926,17 @@ pipeline {
                                     string(name: 'BRANCH', value: 'master'),
                                 ]
                                 echo "Trigger PMM_PS Github Actions Workflow"
-                                withCredentials([string(credentialsId: 'Github_Integration', variable: 'Github_Integration')]) {
+                                withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
                                     sh """
-                                    curl -i -v -X POST \
-                                    -H "Accept: application/vnd.github.v3+json" \
-                                    -H "Authorization: token ${Github_Integration}" \
-                                    "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                    -d '{"ref":"main","inputs":{"ps_version":"${env.PXC_RELEASE}"}}'
+                                        curl -i -v -X POST \
+                                            -H "Accept: application/vnd.github.v3+json" \
+                                            -H "Authorization: token ${GITHUB_API_TOKEN}" \
+                                            "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
+                                            -d '{"ref":"main","inputs":{"PXC_version":"${PXC_RELEASE}"}}'
                                     """
                                 }
-                                slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: PMM sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
+                               
+                             //   slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: PMM sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                             } catch (err) {
                                 echo " Minitests block failed: ${err}"
                                 currentBuild.result = 'FAILURE'
