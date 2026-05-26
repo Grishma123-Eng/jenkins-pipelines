@@ -914,7 +914,7 @@ pipeline {
                             try {
                                 package_tests_pxc80(minitestNodes)
                                 echo "Minitests completed successfully. Triggering next stages."
-                                slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: minitest sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
+                            //    slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: minitest sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                                 echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
                                 build job: 'pxc-package-testing', propagate: false, wait: false, parameters: [
                                     string(name: 'product_to_test', value: "${env.product_to_test}"),
@@ -946,7 +946,7 @@ pipeline {
                     )
                 } else {
                     error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                    slackNotify("${params.SLACKNOTIFY}", "#00FF00", "[${env.JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
+                 //   slackNotify("${params.SLACKNOTIFY}", "#00FF00", "[${env.JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                 }
             }
             deleteDir()
