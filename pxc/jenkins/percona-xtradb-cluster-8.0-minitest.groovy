@@ -905,7 +905,7 @@ pipeline {
                             echo "There are changes"
                             git add -A
                         git commit -m "Autocommit: add ${env.PXC_REVISION}, ${env.PXC_RELEASE}, ${env.PXC_INNODB}, and ${env.PXC_WSREP} for ${env.PXC_VERSION_SHORT} package testing VERSIONS file."
-                            git push origin testing-branch
+                            git push
                         fi
                     """
                     }
