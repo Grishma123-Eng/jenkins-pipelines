@@ -149,13 +149,15 @@ def runPlaybook(def nodeName) {
             def exitCode = sh(
                 script: """
                     set -xe
-                    export product_to_test="${product_to_test}"
-                    export node_to_test="${node_to_test}"
+
+                    export product_to_test="${env.product_to_test}"
+                    export node_to_test="${nodeName}"
                     export test_repo="${test_repo}"
                     export pxc57_repo="${pxc57_repo}"
                     export test_type="${test_type}"
-                    export git_repo"${git_repo}"
-                    export BRANCH"${BRANCH}"
+                    export git_repo="${params.GIT_REPO}"
+                    export BRANCH="${params.GIT_BRANCH}"
+
                     ansible-playbook \
                         --connection=local \
                         --inventory 127.0.0.1, \
