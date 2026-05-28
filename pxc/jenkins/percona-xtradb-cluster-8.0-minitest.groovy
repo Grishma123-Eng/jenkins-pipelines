@@ -149,10 +149,13 @@ def runPlaybook(def nodeName) {
             def exitCode = sh(
                 script: """
                     set -xe
-                    export install_repo="${install_repo}"
-                    export client_to_test="${clientLabel}"
-                    export check_warnings="${check_warnings}"
-                    export install_mysql_shell="${install_mysql_shell}"
+                    export product_to_test="${product_to_test}"
+                    export node_to_test="${node_to_test}"
+                    export test_repo="${test_repo}"
+                    export pxc57_repo="${pxc57_repo}"
+                    export test_type="${test_type}"
+                    export git_repo"${git_repo}"
+                    export BRANCH"${BRANCH}"
                     ansible-playbook \
                         --connection=local \
                         --inventory 127.0.0.1, \
@@ -196,10 +199,12 @@ def package_tests_pxc80(def nodes) {
 
 def AWS_STASH_PATH
 def product_to_test = ''
-def install_repo = 'testing'
+def node_to_test = ''
+def test_repo = 'testing'
 def action_to_test = 'install'
-def check_warnings = 'yes'
-def install_mysql_shell = 'no'
+def pxc57_repo = 'N/A'
+def test_type = 'install'
+def git_repo = ''
 def DOCKER_ACC = "perconalab"
 env.DOCKER_ACC = DOCKER_ACC
 
