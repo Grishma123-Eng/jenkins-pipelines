@@ -163,6 +163,7 @@ def runPlaybook(def nodeName) {
                         --inventory 127.0.0.1, \
                         --limit 127.0.0.1 \
                         -e "test_repo=${test_repo}" \
+                        -e "install_repo=${test_repo}" \
                         -e "pxc57_repo=${pxc57_repo}" \
                         -e "test_type=${test_type}" \
                         -e "product_to_test=${env.product_to_test}" \
