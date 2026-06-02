@@ -202,10 +202,10 @@ def package_tests_pxc80(def nodes) {
 def AWS_STASH_PATH
 def product_to_test = ''
 def node_to_test = ''
-def test_repo = 'testing'
-def action_to_test = 'install'
-def pxc57_repo = 'N/A'
-def test_type = 'install'
+test_repo = 'testing'
+action_to_test = 'install'
+pxc57_repo = 'N/A'
+test_type = 'install'
 def git_repo = ''
 def DOCKER_ACC = "perconalab"
 env.DOCKER_ACC = DOCKER_ACC
