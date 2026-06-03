@@ -934,17 +934,6 @@ pipeline {
                                     string(name: 'git_repo', value: 'grishma123-eng/package-testing'),
                                     string(name: 'BRANCH', value: 'PS-97'),
                                 ]
-                                echo "Trigger PMM_PS Github Actions Workflow"
-                                withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
-                                    sh """
-                                        curl -i -v -X POST \
-                                            -H "Accept: application/vnd.github.v3+json" \
-                                            -H "Authorization: token ${GITHUB_API_TOKEN}" \
-                                            "https://api.github.com/repos/Percona-Lab/qa-integration/actions/workflows/PMM_PS.yaml/dispatches" \
-                                            -d '{"ref":"main","inputs":{"PXC_version":"${PXC_RELEASE}"}}'
-                                    """
-                                }
-                               
                              //   slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: PMM sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
                             } catch (err) {
                                 echo " Minitests block failed: ${err}"
