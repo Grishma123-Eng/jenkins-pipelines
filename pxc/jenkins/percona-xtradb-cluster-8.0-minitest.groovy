@@ -153,6 +153,8 @@ def runPlaybook(def nodeName) {
                     export product_to_test="${env.product_to_test}"
                     export node_to_test="${nodeName}"
                     export test_repo="${test_repo}"
+                    export install_repo="${test_repo}"
+                    export pro="no"
                     export pxc57_repo="${pxc57_repo}"
                     export test_type="${test_type}"
                     export git_repo="${params.GIT_REPO}"
@@ -162,11 +164,6 @@ def runPlaybook(def nodeName) {
                         --connection=local \
                         --inventory 127.0.0.1, \
                         --limit 127.0.0.1 \
-                        -e "test_repo=${test_repo}" \
-                        -e "install_repo=${test_repo}" \
-                        -e "pxc57_repo=${pxc57_repo}" \
-                        -e "test_type=${test_type}" \
-                        -e "product_to_test=${env.product_to_test}" \
                         ${playbook_path}
                 """,
                 returnStatus: true
