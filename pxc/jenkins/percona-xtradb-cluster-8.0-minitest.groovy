@@ -144,7 +144,7 @@ def runPlaybook(def nodeName) {
             def clientLabel = env.product_to_test
             sh '''
                 set -xe
-                git clone --depth 1 https://github.com/Percona-QA/package-testing
+                git clone --depth 1 https://github.com/grishma123-eng/package-testing
             '''
             def exitCode = sh(
                 script: """
@@ -885,11 +885,11 @@ pipeline {
                     withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
                     sh """
                         set -x
-                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/Percona-QA/package-testing.git
+                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/grishma123-eng/package-testing.git
                         cd package-testing
                         git config user.name "jenkins-pxc-cd"
                         git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout testing-branch
+                        git checkout PS-97
                         echo "${env.PXC_VERSION_SHORT} is the VALUE!!@!"
                         export RELEASE_VER_VAL="${env.PXC_VERSION_SHORT}"
                         if [[ "\$RELEASE_VER_VAL" =~ ^PXC8[0-9]{1}\$ ]]; then
@@ -934,8 +934,8 @@ pipeline {
                                     string(name: 'test_repo', value: 'testing'),
                                     string(name: 'test_type', value: 'install'),
                                     string(name: 'pxc57_repo', value: 'N/A'),
-                                    string(name: 'git_repo', value: 'Percona-QA/package-testing'),
-                                    string(name: 'BRANCH', value: 'master'),
+                                    string(name: 'git_repo', value: 'grishma123-eng/package-testing'),
+                                    string(name: 'BRANCH', value: 'PS-97'),
                                 ]
                                 echo "Trigger PMM_PS Github Actions Workflow"
                                 withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'GITHUB_API_TOKEN')]) {
