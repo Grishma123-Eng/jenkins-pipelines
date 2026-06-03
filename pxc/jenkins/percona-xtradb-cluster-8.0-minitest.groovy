@@ -144,7 +144,7 @@ def runPlaybook(def nodeName) {
             def clientLabel = env.product_to_test
             sh '''
                 set -xe
-                git clone --depth 1 https://github.com/grishma123-eng/package-testing
+                git clone --depth 1 -b PS-97 https://github.com/grishma123-eng/package-testing
             '''
             def exitCode = sh(
                 script: """
