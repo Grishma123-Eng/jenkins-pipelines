@@ -206,7 +206,7 @@ def docker_test() {
         node('docker-32gb-aarch64') {
             stage('Run trivy analyzer ARM') {
                 script {
-                    sh "sudo yum install -y wget git curl"
+                    sh "sudo yum install -y wget git"
                     sh '''
                         set -e
                         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
@@ -245,7 +245,7 @@ def docker_test() {
         node('docker-32gb') {
             stage('Run trivy analyzer AMD') {
                 script {
-                    sh "sudo yum install -y wget git curl"
+                    sh "sudo yum install -y wget git"
                     sh '''
                         set -e
                         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
