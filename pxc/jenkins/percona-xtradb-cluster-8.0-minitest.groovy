@@ -206,8 +206,12 @@ def docker_test() {
         node('docker-32gb-aarch64') {
             stage('Run trivy analyzer ARM') {
                 script {
-                    sh "sudo yum install -y wget git"
-                    installTrivy(method: 'binary', junitTpl: true)
+                    sh "sudo yum install -y wget git curl"
+                    sh '''
+                        set -e
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+                        wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                    '''
                     sh """
                         /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-arm.xml \
                         --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
@@ -241,8 +245,12 @@ def docker_test() {
         node('docker-32gb') {
             stage('Run trivy analyzer AMD') {
                 script {
-                    sh "sudo yum install -y wget git"
-                    installTrivy(method: 'binary', junitTpl: true)
+                    sh "sudo yum install -y wget git curl"
+                    sh '''
+                        set -e
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+                        wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                    '''
                     sh """
                         /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-amd.xml \
                         --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
