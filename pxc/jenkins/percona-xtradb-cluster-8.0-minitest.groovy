@@ -200,6 +200,87 @@ def package_tests_pxc80(def nodes) {
     }
     parallel stepsForParallel
 }
+def docker_test() {
+    def stepsForParallel = [:] 
+     stepsForParallel['Run for ARM64'] = {
+            node('docker-32gb-aarch64') {
+                 stages {
+                        stage('Run trivy analyzer ARM') {
+                            steps {
+                                sh "sudo yum install -y wget git"
+                                installTrivy(method: 'binary', junitTpl: true)
+                                sh """
+                                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-arm.xml \
+                                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                                """
+                            }
+                        }
+                 }
+                        stage('Run docker tests ARM') {
+                                    steps {
+                                        sh """
+                                            sudo rm -rf package-testing
+                                            git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                                        """
+                                        sh """
+                                            export PATH=\${PATH}:~/.local/bin
+                                            sudo yum install -y python3 python3-pip
+                                            cd package-testing/docker-image-tests/pxc-arm
+                                            pip3 install --user -r requirements.txt
+                                            export DOCKER_ACC="${DOCKER_ACC}"
+                                            export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                                            export DOCKER_TAG="${DOCKER_TAG}"
+                                            export PXC_VERSION="${PXC_VERSION}"
+                                            export PXC_REVISION="${PXC_REVISION}"
+                                            export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                                            export PXC_PXB_VERSION="${PXC_PXB_VERSION}"
+                                            export PXC57_PKG_VERSION="${PXC57_PKG_VERSION}"
+                                            ./run.sh
+                                        """
+                                    }
+                                 }
+            }
+                stage('Run all tests on AMD') {
+                        agent { label 'docker-32gb' }
+                        stages {
+                            stage('Run trivy analyzer AMD') {
+                                steps {
+                                    sh "sudo yum install -y wget git"
+                                    installTrivy(method: 'binary', junitTpl: true)
+                                    sh """
+                                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-amd.xml \
+                                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                                    """
+                            }
+                            }
+                        stage('Run docker tests AMD') {
+                            steps {
+                                sh """
+                                    sudo rm -rf package-testing
+                                    git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                                """
+                                sh """
+                                    export PATH=\${PATH}:~/.local/bin
+                                    sudo yum install -y python3 python3-pip
+                                    cd package-testing/docker-image-tests/pxc
+                                    pip3 install --user -r requirements.txt
+                                    export DOCKER_ACC="${DOCKER_ACC}"
+                                    export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                                    export DOCKER_TAG="${DOCKER_TAG}"
+                                    export PXC_VERSION="${PXC_VERSION}"
+                                    export PXC_REVISION="${PXC_REVISION}"
+                                    export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                                    export PXC_PXB_VERSION="${PXC_PXB_VERSION}"
+                                    export PXC57_PKG_VERSION="${PXC57_PKG_VERSION}"
+                                    ./run.sh
+                                """
+                            }
+                        }
+                        }
+                }
+     }
+   parallel stepsForParallel                       
+}
 
 def AWS_STASH_PATH
 def product_to_test = ''
