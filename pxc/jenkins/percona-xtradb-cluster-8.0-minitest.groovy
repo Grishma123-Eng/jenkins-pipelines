@@ -201,85 +201,78 @@ def package_tests_pxc80(def nodes) {
     parallel stepsForParallel
 }
 def docker_test() {
-    def stepsForParallel = [:] 
-     stepsForParallel['Run for ARM64'] = {
-            node('docker-32gb-aarch64') {
-                 stages {
-                        stage('Run trivy analyzer ARM') {
-                            steps {
-                                sh "sudo yum install -y wget git"
-                                installTrivy(method: 'binary', junitTpl: true)
-                                sh """
-                                    /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-arm.xml \
-                                    --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
-                                """
-                            }
-                        }
-                 }
-                        stage('Run docker tests ARM') {
-                                    steps {
-                                        sh """
-                                            sudo rm -rf package-testing
-                                            git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
-                                        """
-                                        sh """
-                                            export PATH=\${PATH}:~/.local/bin
-                                            sudo yum install -y python3 python3-pip
-                                            cd package-testing/docker-image-tests/pxc-arm
-                                            pip3 install --user -r requirements.txt
-                                            export DOCKER_ACC="${DOCKER_ACC}"
-                                            export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
-                                            export DOCKER_TAG="${DOCKER_TAG}"
-                                            export PXC_VERSION="${PXC_VERSION}"
-                                            export PXC_REVISION="${PXC_REVISION}"
-                                            export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
-                                            export PXC_PXB_VERSION="${PXC_PXB_VERSION}"
-                                            export PXC57_PKG_VERSION="${PXC57_PKG_VERSION}"
-                                            ./run.sh
-                                        """
-                                    }
-                                 }
-            }
-                stage('Run all tests on AMD') {
-                        agent { label 'docker-32gb' }
-                        stages {
-                            stage('Run trivy analyzer AMD') {
-                                steps {
-                                    sh "sudo yum install -y wget git"
-                                    installTrivy(method: 'binary', junitTpl: true)
-                                    sh """
-                                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-amd.xml \
-                                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
-                                    """
-                            }
-                            }
-                        stage('Run docker tests AMD') {
-                            steps {
-                                sh """
-                                    sudo rm -rf package-testing
-                                    git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
-                                """
-                                sh """
-                                    export PATH=\${PATH}:~/.local/bin
-                                    sudo yum install -y python3 python3-pip
-                                    cd package-testing/docker-image-tests/pxc
-                                    pip3 install --user -r requirements.txt
-                                    export DOCKER_ACC="${DOCKER_ACC}"
-                                    export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
-                                    export DOCKER_TAG="${DOCKER_TAG}"
-                                    export PXC_VERSION="${PXC_VERSION}"
-                                    export PXC_REVISION="${PXC_REVISION}"
-                                    export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
-                                    export PXC_PXB_VERSION="${PXC_PXB_VERSION}"
-                                    export PXC57_PKG_VERSION="${PXC57_PKG_VERSION}"
-                                    ./run.sh
-                                """
-                            }
-                        }
-                        }
+    def stepsForParallel = [:]
+    stepsForParallel['Run for ARM64'] = {
+        node('docker-32gb-aarch64') {
+            stage('Run trivy analyzer ARM') {
+                script {
+                    sh "sudo yum install -y wget git"
+                    installTrivy(method: 'binary', junitTpl: true)
+                    sh """
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-arm.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                    """
                 }
-     }
-   parallel stepsForParallel                       
+            }
+            stage('Run docker tests ARM') {
+                script {
+                    sh """
+                        sudo rm -rf package-testing
+                        git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                    """
+                    sh """
+                        export PATH=\${PATH}:~/.local/bin
+                        sudo yum install -y python3 python3-pip
+                        cd package-testing/docker-image-tests/pxc-arm
+                        pip3 install --user -r requirements.txt
+                        export DOCKER_ACC="${DOCKER_ACC}"
+                        export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                        export DOCKER_TAG="${DOCKER_TAG}"
+                        export PXC_VERSION="${PXC_VERSION}"
+                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                        ./run.sh
+                    """
+                }
+            }
+        }
+    }
+    stepsForParallel['Run all tests on AMD'] = {
+        node('docker-32gb') {
+            stage('Run trivy analyzer AMD') {
+                script {
+                    sh "sudo yum install -y wget git"
+                    installTrivy(method: 'binary', junitTpl: true)
+                    sh """
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-amd.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                    """
+                }
+            }
+            stage('Run docker tests AMD') {
+                script {
+                    sh """
+                        sudo rm -rf package-testing
+                        git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                    """
+                    sh """
+                        export PATH=\${PATH}:~/.local/bin
+                        sudo yum install -y python3 python3-pip
+                        cd package-testing/docker-image-tests/pxc
+                        pip3 install --user -r requirements.txt
+                        export DOCKER_ACC="${DOCKER_ACC}"
+                        export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                        export DOCKER_TAG="${DOCKER_TAG}"
+                        export PXC_VERSION="${PXC_VERSION}"
+                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                        ./run.sh
+                    """
+                }
+            }
+        }
+    }
+    parallel stepsForParallel
 }
 
 def AWS_STASH_PATH
@@ -938,97 +931,34 @@ pipeline {
     post {
         success {
             script {
-                echo "testing"
-                 currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
+                currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
                 unstash 'pxc-80.properties'
                 loadPxcPropertiesFromFile()
-                echo "Revision is: ${env.PXC_REVISION}"
-                echo "PXC_RELEASE is: ${env.PXC_RELEASE}"
-                echo "PXC_INNODB is: ${env.PXC_INNODB}"
-                echo "PXC_WSREP is: ${env.PXC_WSREP}"
-                echo "PXC_VERSION_SHORT_KEY is: ${env.PXC_VERSION_SHORT_KEY}"
-                echo "Value is : ${env.PXC_VERSION_SHORT}"
-                echo "DOCKER account is : ${env.DOCKER_ACC}"
 
-                if (env.product_to_test == 'pxc80') {
-                    echo "Running PXC80-specific steps"
-                } else if (env.product_to_test == 'pxc84') {
-                    echo "Running PXC84-specific steps"
-                } else {
-                    echo "Running client test"
-                }
-                 if("${env.PXC_VERSION_SHORT}"){
-                    echo "Executing MINITESTS as VALID VALUES FOR PXC8_RELEASE_VERSION:${env.PXC_VERSION_SHORT}"
-                    echo "Checking for the Github Repo VERSIONS file changes..."
-                    withCredentials([string(credentialsId: 'GITHUB_API_TOKEN', variable: 'TOKEN')]) {
-                    sh """
-                        set -x
-                        git clone https://jenkins-pxc-cd:$TOKEN@github.com/percona-qa/package-testing.git
-                        cd package-testing
-                        git config user.name "jenkins-pxc-cd"
-                        git config user.email "it+jenkins-pxc-cd@percona.com"
-                        git checkout testing-branch
-                        echo "${env.PXC_VERSION_SHORT} is the VALUE!!@!"
-                        export RELEASE_VER_VAL="${env.PXC_VERSION_SHORT}"
-                        if [[ "\$RELEASE_VER_VAL" =~ ^PXC8[0-9]{1}\$ ]]; then
-                            echo "\$RELEASE_VER_VAL is a valid version"
-                            OLD_REV=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_REV | cut -d '=' -f2- )
-                            echo "OLD_REV is : \${OLD_REV}"
-                            OLD_VER=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_VER | cut -d '=' -f2- )
-                            echo "OLD_VER is : \${OLD_VER}"
-                            OLD_INNODB=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_INNODB | cut -d '=' -f2- )
-                            echo "OLD_INNODB is : \${OLD_INNODB}"
-                            OLD_WSREP=\$(cat VERSIONS | grep ${env.PXC_VERSION_SHORT}_WSREP | cut -d '=' -f2- )
-                            echo "OLD_WSREP is : \${OLD_WSREP}"
-                            sed -i "s|^${env.PXC_VERSION_SHORT}_REV=.*|${env.PXC_VERSION_SHORT}_REV='${env.PXC_REVISION}'|g" VERSIONS
-                            sed -i "s|^${env.PXC_VERSION_SHORT}_VER=.*|${env.PXC_VERSION_SHORT}_VER='${env.PXC_RELEASE}'|g" VERSIONS
-                            sed -i "s|^${env.PXC_VERSION_SHORT}_INNODB=.*|${env.PXC_VERSION_SHORT}_INNODB='${env.PXC_INNODB}'|g" VERSIONS
-                            sed -i "s|^${env.PXC_VERSION_SHORT}_WSREP=.*|${env.PXC_VERSION_SHORT}_WSREP='${env.PXC_WSREP}'|g" VERSIONS
+                // Variables consumed by docker_test() (exported into the docker-image-tests run.sh)
+                env.DOCKER_PRODUCT             = 'percona-xtradb-cluster'
+                env.DOCKER_TAG                 = "${env.PXC_RELEASE}.${params.RPM_RELEASE}"
+                env.PXC_VERSION                = env.PXC_RELEASE
+                env.PXC_WSREP_VERSION          = env.PXC_WSREP
+                env.PACKAGE_TESTING_REPO_URL    = 'https://github.com/Percona-QA/package-testing.git'
+                env.PACKAGE_TESTING_REPO_BRANCH = 'master'
 
-                        else
-                            echo "INVALID PXC8_RELEASE_VERSION VALUE: ${env.PXC_VERSION_SHORT}"
-                        fi
-                        git diff
-                        if [[ -z \$(git diff) ]]; then
-                            echo "No changes"
-                        else
-                            echo "There are changes"
-                            git add -A
-                        git commit -m "Autocommit: add ${env.PXC_REVISION}, ${env.PXC_RELEASE}, ${env.PXC_INNODB}, and ${env.PXC_WSREP} for ${env.PXC_VERSION_SHORT} package testing VERSIONS file."
-                            git push
-                        fi
-                    """
-                    }
-                    parallel(
-                        "Start Minitests for PXC": {
-                            try {
-                                package_tests_pxc80(minitestNodes)
-                                echo "Minitests completed successfully. Triggering next stages."
-                            //    slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: minitest sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
-                                echo "TRIGGERING THE PACKAGE TESTING JOB!!!"
-                                build job: 'pxc-package-testing', propagate: false, wait: false, parameters: [
-                                    string(name: 'product_to_test', value: "${env.product_to_test}"),
-                                    string(name: 'node_to_test', value: 'ubuntu-jammy'),
-                                    string(name: 'test_repo', value: 'testing'),
-                                    string(name: 'test_type', value: 'install'),
-                                    string(name: 'pxc57_repo', value: 'N/A'),
-                                    string(name: 'git_repo', value: 'grishma123-eng/package-testing'),
-                                    string(name: 'BRANCH', value: 'PS-97'),
-                                ]
-                             //   slackNotify("${params.SLACKNOTIFY}", "#FF0000", "[${env.JOB_NAME}]: PMM sucessfully run for ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
-                            } catch (err) {
-                                echo " Minitests block failed: ${err}"
-                                currentBuild.result = 'FAILURE'
-                                throw err
-                            }
-                        }
-                    )
-                } else {
-                    error "Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB"
-                 //   slackNotify("${params.SLACKNOTIFY}", "#00FF00", "[${env.JOB_NAME}]: Skipping MINITESTS and Other Triggers as invalid RELEASE VERSION FOR THIS JOB ${params.GIT_BRANCH} - [${env.BUILD_URL}]")
-                }
+                MinitestPostSucessPxc(
+                    product_to_test: env.product_to_test,
+                    PXC_RELEASE: env.PXC_RELEASE,
+                    PXC_REVISION: env.PXC_REVISION,
+                    PXC_INNODB: env.PXC_INNODB,
+                    PXC_WSREP: env.PXC_WSREP,
+                    PXC_VERSION_SHORT: env.PXC_VERSION_SHORT,
+                    PXC_VERSION_SHORT_KEY: env.PXC_VERSION_SHORT_KEY,
+                    minitestNodes: minitestNodes,
+                    SLACKNOTIFY: params.SLACKNOTIFY,
+                    GIT_BRANCH: params.GIT_BRANCH,
+                    DOCKER_ACC: env.DOCKER_ACC,
+                    packageTestsClosure: { nodes -> package_tests_pxc80(nodes) },
+                    dockerTestClosure: { -> docker_test() }
+                )
             }
-            deleteDir()
         }
         failure {
             script {
