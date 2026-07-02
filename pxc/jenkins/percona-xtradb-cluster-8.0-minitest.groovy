@@ -228,6 +228,8 @@ def docker_test() {
                         export PATH=\${PATH}:~/.local/bin
                         sudo yum install -y python3 python3-pip
                         cd package-testing/docker-image-tests/pxc-arm
+                        # Fix upstream indentation bug: only the 'if' right after def test_install_component is over-indented
+                        sed -i '/def test_install_component/{n;s/^            if /        if /}' tests/test_pxc_cluster.py
                         pip3 install --user -r requirements.txt
                         export DOCKER_ACC="${DOCKER_ACC}"
                         export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
