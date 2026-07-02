@@ -224,12 +224,18 @@ def docker_test() {
                         sudo rm -rf package-testing
                         git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
                     """
+                    sh '''
+                        cd package-testing/docker-image-tests/pxc-arm
+                        # Patch upstream test bugs at runtime (package-testing repo is NOT modified):
+                        # 1) over-indented "if" right after def test_install_component
+                        sed -i '/def test_install_component/{n;s/^            if /        if /}' tests/test_pxc_cluster.py
+                        # 2) settings.py missing pxc_components assignment for the 8.4 branch
+                        grep -q "pxc_components = pxc84_components" settings.py || sed -i 's/    pxc_functions = pxc84_functions/    pxc_functions = pxc84_functions\\n    pxc_components = pxc84_components/' settings.py
+                    '''
                     sh """
                         export PATH=\${PATH}:~/.local/bin
                         sudo yum install -y python3 python3-pip
                         cd package-testing/docker-image-tests/pxc-arm
-                        # Fix upstream indentation bug: only the 'if' right after def test_install_component is over-indented
-                        sed -i '/def test_install_component/{n;s/^            if /        if /}' tests/test_pxc_cluster.py
                         pip3 install --user -r requirements.txt
                         export DOCKER_ACC="${DOCKER_ACC}"
                         export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
@@ -265,6 +271,12 @@ def docker_test() {
                         sudo rm -rf package-testing
                         git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
                     """
+                    sh '''
+                        cd package-testing/docker-image-tests/pxc
+                        # Patch upstream bug at runtime (package-testing repo is NOT modified):
+                        # settings.py missing pxc_components assignment for the 8.4 branch
+                        grep -q "pxc_components = pxc84_components" settings.py || sed -i 's/    pxc_functions = pxc84_functions/    pxc_functions = pxc84_functions\\n    pxc_components = pxc84_components/' settings.py
+                    '''
                     sh """
                         export PATH=\${PATH}:~/.local/bin
                         sudo yum install -y python3 python3-pip
