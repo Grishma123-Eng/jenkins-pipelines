@@ -42,6 +42,130 @@ void buildStage(String DOCKER_OS, String STAGE_PARAM) {
         }
     }
 }
+def installDependencies(def nodeName) {
+    def aptNodes = ['min-bullseye-x64', 'min-bookworm-x64', 'min-jammy-x64', 'min-noble-x64']
+    def yumNodes = ['min-ol-8-x64',  'min-ol-9-x64', 'min-amazon-2-x64']
+
+    try{
+        if (aptNodes.contains(nodeName)) {
+            if(nodeName == "min-bullseye-x64" || nodeName == "min-bookworm-x64"){            
+                sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y ansible git wget
+                '''
+            }else if(nodeName == "min-focal-x64" || nodeName == "min-jammy-x64" || nodeName == "min-noble-x64"){
+                sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y software-properties-common
+                    sudo apt-add-repository --yes --update ppa:ansible/ansible
+                    sudo apt-get install -y ansible git wget
+                '''
+            }else {
+                error "Node Not Listed in APT"
+            }
+        } else if (yumNodes.contains(nodeName)) {
+
+            if(nodeName == "min-centos-7-x64" || nodeName == "min-ol-9-x64"){            
+                sh '''
+                    sudo yum install -y epel-release
+                    sudo yum -y update
+                    sudo yum install -y ansible git wget tar
+                '''
+            }else if(nodeName == "min-ol-8-x64"){
+                sh '''
+                    sudo yum install -y epel-release
+                    sudo yum -y update
+                    sudo yum install -y ansible-2.9.27 git wget tar
+                '''
+            }else if(nodeName == "min-amazon-2-x64"){
+                sh '''
+                    sudo amazon-linux-extras install epel
+                    sudo yum -y update
+                    sudo yum install -y ansible git wget
+                '''
+            }
+            else {
+                error "Node Not Listed in YUM"
+            }
+        } else {
+            echo "Unexpected node name: ${nodeName}"
+        }
+    } catch (Exception e) {
+      /*  slackNotify("${SLACKNOTIFY}", "#FF0000", "[${JOB_NAME}]: Server Provision for Mini Package Testing for ${nodeName} at ${BRANCH}  FAILED !!") */
+    }
+
+}
+def loadPxcPropertiesFromFile() {
+    def propsFile = 'test/pxc-80.properties'
+    sh "cat ${propsFile}"
+    env.PXC_REVISION = sh(returnStdout: true, script: "grep '^REVISION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_INNODB = sh(returnStdout: true, script: "grep '^MYSQL_RELEASE=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    def wsrepVersion = sh(returnStdout: true, script: "grep '^WSREP_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    def wsrepRev = sh(returnStdout: true, script: "grep '^WSREP_REV=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_WSREP = "${wsrepVersion.tokenize('.')[0..1].join('.')}(${wsrepRev})"
+    def mysqlVersion = sh(returnStdout: true, script: "grep '^MYSQL_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
+    env.PXC_RELEASE = "${mysqlVersion}-${env.PXC_INNODB}"
+    env.PXC_VERSION_SHORT_KEY = env.PXC_RELEASE.tokenize('.')[0..1].join('.')
+    env.PXC_VERSION_SHORT = "PXC${env.PXC_VERSION_SHORT_KEY.replace('.', '')}"
+    env.product_to_test = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
+    echo "PXC_RELEASE: ${env.PXC_RELEASE}"
+    echo "PXC_REVISION: ${env.PXC_REVISION}"
+    echo "PXC_INNODB: ${env.PXC_INNODB}"
+    echo "PXC_WSREP: ${env.PXC_WSREP}"
+    echo "PXC_VERSION_SHORT: ${env.PXC_VERSION_SHORT}"
+}
+
+def setPxcVersionEnv() {
+    def branch = params.GIT_BRANCH.trim()
+    def release = branch.replaceAll('^release-', '')
+    env.PXC_RELEASE = release
+    def parts = release.tokenize('.')
+    env.PXC_VERSION_SHORT_KEY = parts.size() >= 2 ? parts[0..1].join('.') : release
+    env.PXC_VERSION_SHORT = "PXC${env.PXC_VERSION_SHORT_KEY.replace('.', '')}"
+    env.product_to_test = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84' : 'pxc80'
+    echo "GIT_BRANCH=${branch} -> PXC_RELEASE=${env.PXC_RELEASE}, PXC_VERSION_SHORT=${env.PXC_VERSION_SHORT}, product_to_test=${env.product_to_test}"
+}
+
+def runPlaybook(def nodeName) {
+    script {
+            if (!env.PXC_VERSION_SHORT) {
+                setPxcVersionEnv()
+            }
+            echo "Minitest on ${nodeName}: PXC_VERSION_SHORT=${env.PXC_VERSION_SHORT}, product_to_test=${env.product_to_test}"
+            def playbook = (env.PXC_VERSION_SHORT == 'PXC84') ? 'pxc84_bootstrap.yml' : 'pxc80_bootstrap.yml'
+            def playbook_path = "package-testing/playbooks/${playbook}"
+            def clientLabel = env.product_to_test
+            sh '''
+                set -xe
+                git clone --depth 1 -b PS-97 https://github.com/grishma123-eng/package-testing
+            '''
+            def exitCode = sh(
+                script: """
+                    set -xe
+
+                    export product_to_test="${env.product_to_test}"
+                    export node_to_test="${nodeName}"
+                    export test_repo="${test_repo}"
+                    export install_repo="${test_repo}"
+                    export pro="no"
+                    export pxc57_repo="${pxc57_repo}"
+                    export test_type="${test_type}"
+                    export git_repo="${params.GIT_REPO}"
+                    export BRANCH="${params.GIT_BRANCH}"
+
+                    ansible-playbook \
+                        --connection=local \
+                        --inventory 127.0.0.1, \
+                        --limit 127.0.0.1 \
+                        ${playbook_path}
+                """,
+                returnStatus: true
+            )
+            if (exitCode != 0) {
+                error "Ansible playbook failed on ${nodeName} with exit code ${exitCode}"
+            }
+    }
+}
 
 void cleanUpWS() {
     sh """
@@ -49,7 +173,144 @@ void cleanUpWS() {
     """
 }
 
+def minitestNodes = [  "min-jammy-x64",
+                       "min-bullseye-x64",
+                       "min-bookworm-x64",
+                       "min-noble-x64",
+                       "min-ol-8-x64" ,  
+                       "min-ol-9-x64",
+                       "min-amazon-2-x64"
+                    ]
+
+
+def package_tests_pxc80(def nodes) {
+    def stepsForParallel = [:]
+    for (int i = 0; i < nodes.size(); i++) {
+        def nodeName = nodes[i]
+        stepsForParallel[nodeName] = {
+            stage("Minitest run on ${nodeName}") {
+                node(nodeName) {
+                        installDependencies(nodeName)
+                        runPlaybook(nodeName)
+                }
+            }
+        }
+    }
+    parallel stepsForParallel
+}
+def docker_test() {
+    def stepsForParallel = [:]
+    stepsForParallel['Run for ARM64'] = {
+        node('docker-32gb-aarch64') {
+            stage('Run trivy analyzer ARM') {
+                script {
+                    sh "sudo yum install -y wget git"
+                    sh '''
+                        set -e
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+                        wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                    '''
+                    sh """
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-arm.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                    """
+                }
+            }
+            stage('Run docker tests ARM') {
+                script {
+                    sh """
+                        sudo rm -rf package-testing
+                        git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                    """
+                    sh '''
+                        cd package-testing/docker-image-tests/pxc-arm
+                        # Patch upstream test bugs at runtime (package-testing repo is NOT modified):
+                        # 1) over-indented "if" right after def test_install_component
+                        sed -i '/def test_install_component/{n;s/^            if /        if /}' tests/test_pxc_cluster.py
+                        # 2) settings.py missing pxc_components assignment for the 8.4 branch
+                        grep -q "pxc_components = pxc84_components" settings.py || sed -i 's/    pxc_functions = pxc84_functions/    pxc_functions = pxc84_functions\\n    pxc_components = pxc84_components/' settings.py
+                    '''
+                    sh """
+                        export PATH=\${PATH}:~/.local/bin
+                        sudo yum install -y python3 python3-pip
+                        cd package-testing/docker-image-tests/pxc-arm
+                        pip3 install --user -r requirements.txt
+                        export DOCKER_ACC="${DOCKER_ACC}"
+                        export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                        export DOCKER_TAG="${DOCKER_TAG}"
+                        export PXC_VERSION="${PXC_VERSION}"
+                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                        ./run.sh
+                    """
+                }
+            }
+        }
+    }
+    stepsForParallel['Run all tests on AMD'] = {
+        node('docker-32gb') {
+            stage('Run trivy analyzer AMD') {
+                script {
+                    sh "sudo yum install -y wget git"
+                    sh '''
+                        set -e
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+                        wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+                    '''
+                    sh """
+                        /usr/local/bin/trivy -q image --format template --template @junit.tpl  -o trivy-hight-junit-amd.xml \
+                        --timeout 10m0s --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_ACC}/${DOCKER_PRODUCT}:${DOCKER_TAG} || true
+                    """
+                }
+            }
+            stage('Run docker tests AMD') {
+                script {
+                    sh """
+                        sudo rm -rf package-testing
+                        git clone ${PACKAGE_TESTING_REPO_URL} --depth 1 -b ${PACKAGE_TESTING_REPO_BRANCH} package-testing
+                    """
+                    sh '''
+                        cd package-testing/docker-image-tests/pxc
+                        # Patch upstream bug at runtime (package-testing repo is NOT modified):
+                        # settings.py missing pxc_components assignment for the 8.4 branch
+                        grep -q "pxc_components = pxc84_components" settings.py || sed -i 's/    pxc_functions = pxc84_functions/    pxc_functions = pxc84_functions\\n    pxc_components = pxc84_components/' settings.py
+                    '''
+                    sh """
+                        export PATH=\${PATH}:~/.local/bin
+                        sudo yum install -y python3 python3-pip
+                        cd package-testing/docker-image-tests/pxc
+                        pip3 install --user -r requirements.txt
+                        export DOCKER_ACC="${DOCKER_ACC}"
+                        export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
+                        export DOCKER_TAG="${DOCKER_TAG}"
+                        export PXC_VERSION="${PXC_VERSION}"
+                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
+                        ./run.sh
+                    """
+                }
+            }
+        }
+    }
+    parallel stepsForParallel
+}
+void cleanUpWS() {
+    sh """
+        sudo rm -rf ./*
+    """
+}
+
 def AWS_STASH_PATH
+def product_to_test = ''
+def node_to_test = ''
+test_repo = 'testing'
+action_to_test = 'install'
+pxc57_repo = 'N/A'
+test_type = 'install'
+def git_repo = ''
+def DOCKER_ACC = "perconalab"
+env.DOCKER_ACC = DOCKER_ACC
+
 
 pipeline {
     agent {
@@ -799,13 +1060,34 @@ pipeline {
     post {
         success {
             script {
-                if (env.FIPSMODE == 'YES') {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: PRO build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
-                } else {
-                    slackNotify("${SLACKNOTIFY}", "#00FF00", "[${JOB_NAME}]: build has been finished successfully for ${GIT_BRANCH} - [${BUILD_URL}]")
-                }
+                currentBuild.description = "Built on ${params.GIT_BRANCH}; path to packages: ${params.COMPONENT}/${env.AWS_STASH_PATH}"
+                unstash 'pxc-80.properties'
+                loadPxcPropertiesFromFile()
+
+                // Variables consumed by docker_test() (exported into the docker-image-tests run.sh)
+                env.DOCKER_PRODUCT             = 'percona-xtradb-cluster'
+                env.DOCKER_TAG                 = "${env.PXC_RELEASE}.${params.RPM_RELEASE}"
+                env.PXC_VERSION                = env.PXC_RELEASE
+                env.PXC_WSREP_VERSION          = env.PXC_WSREP
+                env.PACKAGE_TESTING_REPO_URL    = 'https://github.com/Percona-QA/package-testing.git'
+                env.PACKAGE_TESTING_REPO_BRANCH = 'master'
+
+                MinitestPostSucessPxc(
+                    product_to_test: env.product_to_test,
+                    PXC_RELEASE: env.PXC_RELEASE,
+                    PXC_REVISION: env.PXC_REVISION,
+                    PXC_INNODB: env.PXC_INNODB,
+                    PXC_WSREP: env.PXC_WSREP,
+                    PXC_VERSION_SHORT: env.PXC_VERSION_SHORT,
+                    PXC_VERSION_SHORT_KEY: env.PXC_VERSION_SHORT_KEY,
+                    minitestNodes: minitestNodes,
+                    SLACKNOTIFY: params.SLACKNOTIFY,
+                    GIT_BRANCH: params.GIT_BRANCH,
+                    DOCKER_ACC: env.DOCKER_ACC,
+                    packageTestsClosure: { nodes -> package_tests_pxc80(nodes) },
+                    dockerTestClosure: { -> docker_test() }
+                )
             }
-            deleteDir()
         }
         failure {
             script {
