@@ -110,6 +110,8 @@ def loadPxcPropertiesFromFile() {
     def wsrepVersion = sh(returnStdout: true, script: "grep '^WSREP_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     def wsrepRev = sh(returnStdout: true, script: "grep '^WSREP_REV=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     env.PXC_WSREP = "${wsrepVersion.tokenize('.')[0..1].join('.')}(${wsrepRev})"
+    // Full numeric WSREP version (e.g. 26.1.4.3) as reported by the server binary — used by docker image tests
+    env.PXC_WSREP_VERSION_FULL = wsrepVersion
     def mysqlVersion = sh(returnStdout: true, script: "grep '^MYSQL_VERSION=' ${propsFile} | awk -F '=' '{ print \$2 }'").trim()
     env.PXC_RELEASE = "${mysqlVersion}-${env.PXC_INNODB}"
     env.PXC_VERSION_SHORT_KEY = env.PXC_RELEASE.tokenize('.')[0..1].join('.')
@@ -960,8 +962,9 @@ pipeline {
                 // Variables consumed by docker_test() (exported into the docker-image-tests run.sh)
                 env.DOCKER_PRODUCT             = 'percona-xtradb-cluster'
                 env.DOCKER_TAG                 = "${env.PXC_RELEASE}.${params.RPM_RELEASE}"
-                env.PXC_VERSION                = env.PXC_RELEASE
-                env.PXC_WSREP_VERSION          = env.PXC_WSREP
+                // mysql --version inside the image reports the full tag (with RPM_RELEASE) and the numeric WSREP version
+                env.PXC_VERSION                = env.DOCKER_TAG
+                env.PXC_WSREP_VERSION          = env.PXC_WSREP_VERSION_FULL
                 env.PACKAGE_TESTING_REPO_URL    = 'https://github.com/Percona-QA/package-testing.git'
                 env.PACKAGE_TESTING_REPO_BRANCH = 'master'
 
