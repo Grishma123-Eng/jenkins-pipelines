@@ -243,7 +243,7 @@ def docker_test() {
                         export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
                         export DOCKER_TAG="${DOCKER_TAG}"
                         export PXC_VERSION="${PXC_VERSION}"
-                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_REVISION="${PXC_REVISION_SHORT}"
                         export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
                         ./run.sh
                     """
@@ -288,7 +288,7 @@ def docker_test() {
                         export DOCKER_PRODUCT="${DOCKER_PRODUCT}"
                         export DOCKER_TAG="${DOCKER_TAG}"
                         export PXC_VERSION="${PXC_VERSION}"
-                        export PXC_REVISION="${PXC_REVISION}"
+                        export PXC_REVISION="${PXC_REVISION_SHORT}"
                         export PXC_WSREP_VERSION="${PXC_WSREP_VERSION}"
                         ./run.sh
                     """
@@ -965,6 +965,8 @@ pipeline {
                 // mysql --version inside the image reports the full tag (with RPM_RELEASE) and the numeric WSREP version
                 env.PXC_VERSION                = env.DOCKER_TAG
                 env.PXC_WSREP_VERSION          = env.PXC_WSREP_VERSION_FULL
+                // The image embeds a 7-char short git revision; properties REVISION is longer, so trim to match
+                env.PXC_REVISION_SHORT         = env.PXC_REVISION.take(7)
                 env.PACKAGE_TESTING_REPO_URL    = 'https://github.com/Percona-QA/package-testing.git'
                 env.PACKAGE_TESTING_REPO_BRANCH = 'master'
 
