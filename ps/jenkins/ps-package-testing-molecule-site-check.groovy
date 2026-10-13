@@ -61,7 +61,6 @@ def ps84PackageTesting() {
         'debian-12-arm',
         'debian-13',
         'debian-13-arm',
-        'oracle-8',
         'oracle-9',
         'rhel-8',
         'rhel-9',
