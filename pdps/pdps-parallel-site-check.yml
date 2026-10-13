@@ -1,0 +1,14 @@
+- job:
+    name: pdps-parallel-site-check
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/grishma123-eng/jenkins-pipelines.git
+            branches:
+            - 'ps-site-check'
+            wipe-workspace: false
+      lightweight-checkout: true
+      script-path: pdps/pdps-parallel-site-check.groovy
