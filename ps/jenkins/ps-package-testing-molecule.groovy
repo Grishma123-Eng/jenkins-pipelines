@@ -57,7 +57,6 @@ def ps80PackageTesting() {
 
 def ps84PackageTesting() {
     return [
-        'debian-12',
         'debian-12-arm',
         'debian-13',
         'debian-13-arm',
