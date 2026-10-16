@@ -1,7 +1,7 @@
 
-library changelog: false, identifier: "lib@master", retriever: modernSCM([
+library changelog: false, identifier: "lib@ps-site-check", retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ])
 
 
@@ -50,6 +50,13 @@ def ps80PackageTesting() {
         'rocky-9-arm',
         'ubuntu-jammy',
         'ubuntu-jammy-arm',
+        'ubuntu-noble',
+        'ubuntu-noble-arm',
+    ]
+}
+
+def ps26PackageTesting() {
+    return [
         'ubuntu-noble',
         'ubuntu-noble-arm',
     ]
@@ -133,7 +140,7 @@ def ps57PackageTesting() {
     ]
 }
 
-List allOS = ps90PackageTesting() + ps80PackageTesting() + ps84PackageTesting() + ps57PackageTesting() + ps97PackageTesting()
+List allOS = ps90PackageTesting() + ps80PackageTesting() + ps26PackageTesting() + ps84PackageTesting() + ps57PackageTesting() + ps97PackageTesting()
 
 def moleculeParallelTestALL(allOS, operatingSystems, moleculeDir) {
     def tests = [:]
@@ -255,7 +262,7 @@ properties([
                 script: [
                     classpath: [],
                     sandbox: true,
-                    script: 'return ["ps_57", "ps_80", "ps_84", "ps_innovation", "ps_97", "client_test"]'
+                    script: 'return ["ps_57", "ps_80", "ps_84", "ps_innovation", "ps_97", "ps_26", "client_test"]'
                 ]
             ]
         ],
@@ -287,7 +294,7 @@ properties([
                         if (product_to_test == "ps57") {
                             return ["install", "upgrade", "major_upgrade", "kmip", "kms"]
                         }
-                        else if (product_to_test == "ps_80" || product_to_test == "ps_84" || product_to_test == "ps_97") {
+                        else if (product_to_test == "ps_80" || product_to_test == "ps_84" || product_to_test == "ps_97" || product_to_test == "ps_26" ) {
                             return ["install", "upgrade", "major_upgrade", "kmip", "kms"]
                         }
                         else {
@@ -541,6 +548,9 @@ pipeline {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                                             moleculeParallelTestALL(allOS, ps80OS, "molecule/ps/")
                                         }
+                                    }
+                                    else if (product_to_test == "ps_26") {
+                                        moleculeParallelTestALL(allOS, ps26PackageTesting(), "molecule/ps/")
                                     }
                                     else if (product_to_test == "ps_84") {
                                         withCredentials([usernamePassword(credentialsId: 'PS_PRIVATE_REPO_ACCESS', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
