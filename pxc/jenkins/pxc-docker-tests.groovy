@@ -1,6 +1,6 @@
-library changelog: false, identifier: "lib@master", retriever: modernSCM([
+library changelog: false, identifier: "lib@fix-test-job", retriever: modernSCM([
     $class: 'GitSCMSource',
-    remote: 'https://github.com/Percona-Lab/jenkins-pipelines.git'
+    remote: 'https://github.com/grishma123-eng/jenkins-pipelines.git'
 ])
 
 pipeline_timeout = 10
@@ -10,7 +10,12 @@ pipeline_timeout = 10
 // derived deterministically from PXC_VERSION instead.
 def dockerAcc()     { return params.EOL == 'yes' ? 'percona' : params.DOCKER_ACC }
 def dockerProduct() { return params.EOL == 'yes' ? 'percona-xtradb-cluster' : params.DOCKER_PRODUCT }
-def dockerTag()     { return params.EOL == 'yes' ? params.PXC_VERSION : params.DOCKER_TAG }
+def dockerTag() {
+    if (params.EOL == 'yes') { return params.PXC_VERSION }
+    // Active Choices HTML inputs can submit a trailing comma; strip it
+    def tag = (params.DOCKER_TAG ?: '').trim().replaceAll(/,+$/, '')
+    return (tag && tag != 'NA') ? tag : params.PXC_VERSION
+}
 def pxcImage()      { return "${dockerAcc()}/${dockerProduct()}:${dockerTag()}" }
 
 // Download the PXC EOL docker image tarball from the PS private (gated) repo and load it
@@ -84,15 +89,21 @@ properties([
                 script: [classpath: [], sandbox: true, script: 'return (EOL == "yes") ? ["NA"] : ["percona-xtradb-cluster"]']
             ]
         ],
-        [
-            $class: 'CascadeChoiceParameter',
-            choiceType: 'PT_SINGLE_SELECT',
+                [
+            $class: 'DynamicReferenceParameter',
+            choiceType: 'ET_FORMATTED_HTML',
             name: 'DOCKER_TAG',
-            description: 'Docker tag to test (N/A when EOL=yes)',
+            description: 'Docker tag to test. Leave empty to use PXC_VERSION (N/A when EOL=yes)',
             referencedParameters: 'EOL',
+            omitValueField: false,
             script: [
                 $class: 'GroovyScript',
-                script: [classpath: [], sandbox: true, script: 'return (EOL == "yes") ? ["NA"] : ["8.0.22-13.1"]']
+                script: [classpath: [], sandbox: true, script: '''
+                    if (EOL == "yes") {
+                        return '<input name="value" class="setting-input" type="text" value="NA" readonly>'
+                    }
+                    return '<input name="value" class="setting-input" type="text" value="">'
+                ''']
             ]
         ],
         string(name: 'PXC_VERSION', defaultValue: '8.0.22-13.1', description: 'Full PXC version'),
