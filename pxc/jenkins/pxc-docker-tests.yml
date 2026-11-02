@@ -1,5 +1,5 @@
 - job:
-    name: pxc-docker-tests-fix
+    name: pxc-docker-tests
     project-type: pipeline
     description: |
         Do not edit this job through the web!
@@ -12,7 +12,7 @@
             - git:
                 url: https://github.com/grishma123-eng/jenkins-pipelines.git
                 branches:
-                    - 'fix-test-job'
+                    - 'master'
                 wipe-workspace: true
         lightweight-checkout: true
-        script-path: pxc/grishma123-eng/pxc-docker-tests.groovy
+        script-path: pxc/jenkins/pxc-docker-tests.groovy
