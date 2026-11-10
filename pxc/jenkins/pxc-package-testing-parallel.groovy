@@ -225,6 +225,7 @@ void runNodeBuild(String node_to_test) {
                     string(name: "test_repo", value: params.test_repo),
                     string(name: "test_type", value: "${test_type}"),
                     string(name: "pxc57_repo", value: params.pxc57_repo),
+                    string(name: "EOL", value: params.EOL ? "yes" : "no"),
                     string(name: "git_repo", value: params.git_repo),
                     string(name: "BRANCH", value: params.BRANCH)
                 ],
@@ -282,6 +283,11 @@ properties([
             name: 'test_repo',
             choices: ['testing', 'main', 'experimental'],
             description: 'Repo to install packages from'
+        ),
+        booleanParam(
+            name: 'EOL',
+            defaultValue: false,
+            description: 'Use the EOL (password protected) testing repo for PXC 8.0 (non-PRO only)'
         ),
         [
             $class: 'CascadeChoiceParameter',
@@ -403,6 +409,7 @@ pipeline {
                     echo "Product: ${params.product_to_test}"
                     echo "Test Repo: ${params.test_repo}"
                     echo "PRO Repo: ${params.pro_repo}"
+                    echo "EOL: ${params.EOL}"
                     
                     if (params.product_to_test == 'pxc57') {
                         echo "PXC57 Repo: ${params.pxc57_repo}"
