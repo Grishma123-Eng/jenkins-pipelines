@@ -1,10 +1,11 @@
 - job:
-    name: qa-weekly-ci-digest
+    # Lives in the qa-reports folder: its JNKPercona credentials are stored there.
+    name: qa-reports/qa-weekly-ci-digest
     project-type: pipeline
     description: |
         Do not edit this job through the web!
         Weekly QA digest of package testing, tarball and docker jobs on ps80, pxc, pxb and ps57.
-        Posts to Slack only when SLACK_CHANNEL is set and DRY_RUN is unticked.
+        Posts to #mysql-qa-job unless DRY_RUN is ticked.
         Code and job lists: misc/qa-weekly-ci-digest/
     concurrent: false
     properties:
