@@ -1,0 +1,26 @@
+- job:
+    name: qa-weekly-ci-digest
+    project-type: pipeline
+    description: |
+        Do not edit this job through the web!
+        Weekly QA digest of package testing, tarball and docker jobs on ps80, pxc, pxb and ps57.
+        Posts to Slack only when SLACK_CHANNEL is set and DRY_RUN is unticked.
+        Code and job lists: misc/qa-weekly-ci-digest/
+    concurrent: false
+    properties:
+        - build-discarder:
+            artifact-days-to-keep: -1
+            artifact-num-to-keep: 30
+            days-to-keep: -1
+            num-to-keep: 30
+    pipeline-scm:
+        scm:
+            - git:
+                url: https://github.com/grishma123-eng/jenkins-pipelines.git
+                branches:
+                    - 'jenkins-report'
+                wipe-workspace: true
+        lightweight-checkout: false
+        script-path: misc/qa-weekly-ci-digest.groovy
+    triggers:
+      - timed: "H(10-20) 7 * * 1"

@@ -1,0 +1,56 @@
+# QA weekly CI digest: exactly which Jenkins jobs are reported, per master.
+# Change the scope here; no code changes needed. Names must match the Jenkins job name exactly.
+
+title: "QA weekly CI digest"
+
+masters:
+  ps80: https://ps80.cd.percona.com
+  pxc:  https://pxc.cd.percona.com
+  pxb:  https://pxb.cd.percona.com
+  ps57: https://ps57.cd.percona.com
+
+# The jobs in the report. product and type are used for the "By product" / "By type" lines.
+jobs:
+  ps80:
+    - {name: ps-package-testing-molecule,  product: PS,     type: package}
+    - {name: test-ps-binary-tarball,       product: PS,     type: tarball}
+    - {name: test-ps-docker-80-EOL,        product: PS,     type: docker}
+    - {name: test-ps-docker-image,         product: PS,     type: docker}
+  pxc:
+    - {name: pxc-package-testing-parallel, product: PXC,    type: package}
+    - {name: test-pxc-binary-tarball,      product: PXC,    type: tarball}
+    - {name: test-pxc-binary-tarball-EOL,  product: PXC,    type: tarball}
+    - {name: pxc-docker-tests,             product: PXC,    type: docker}
+  pxb:
+    - {name: pxb-package-testing-molecule, product: PXB,    type: package}
+    - {name: pxb-tarball-molecule,         product: PXB,    type: tarball}
+    - {name: pxb-docker-tests,             product: PXB,    type: docker}
+  ps57:
+    - {name: test-ps-binary-tarball,       product: PS 5.7, type: tarball}
+    - {name: test-ps-docker-image-5.7-EOL, product: PS 5.7, type: docker}
+
+# Child jobs: read ONLY for builds started by one of the jobs above, to find out why the
+# parent went red. They are never counted as runs and never listed as jobs.
+children:
+  pxc:
+    - pxc-package-testing        # started by pxc-package-testing-parallel
+
+# Builds started by these upstream jobs are ignored (personal / test copies).
+exclude_upstream:
+  - '-(grishma|tomislav|sveta|yash|demo|fix)(-|$)'
+  - '-test(-|$)'
+
+window:
+  week_days: 7          # the digest covers the 7 days before the run
+  history_weeks: 8      # broken / flaky / "not seen before" look this far back
+  builds_per_job: 100   # cap of builds read per job
+
+health:
+  broken_streak: 3        # "broken" after this many FAILUREs in a row
+  flaky_min_outcomes: 6   # need this many finished builds before calling a job flaky
+  flaky_flip_rate: 0.3    # share of consecutive builds whose result flipped
+
+attention:
+  max_items_in_slack: 3
+  max_items_total: 8
+  bedrock_model: ""       # empty = code-only "Needs attention" list
