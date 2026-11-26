@@ -67,20 +67,42 @@ class Jenkins:
         return [normalize_build(fullname, b) for b in r.json().get("allBuilds", [])]
 
     def log_tail(self, build_url: str, nbytes: int = LOG_TAIL_BYTES,
-                 max_scan: int = 200_000_000) -> str:
-        """Last nbytes of the console, streamed so huge logs never sit in memory."""
+                 max_scan: int = 200_000_000, max_hits: int = 300) -> str:
+        """Error lines from the WHOLE console plus its last nbytes.
+
+        Big logs (molecule) put the real error far before the end, so the console is streamed
+        once: every error-looking line is kept (up to max_hits, de-duplicated), and the tail is
+        kept for the final status. Nothing large is held in memory.
+        """
+        from .classify import ERROR_LINE  # local import keeps jenkins.py usable on its own
+
         tail = b""
-        seen = 0
+        hits: list[str] = []
+        seen_hits: set[str] = set()
+        rest = b""
+        scanned = 0
         with self.s.get(self.url + _path_of(build_url) + "consoleText", stream=True,
                         timeout=self.timeout) as r:
             if not r.ok:
                 return ""
             for chunk in r.iter_content(chunk_size=1 << 16):
+                scanned += len(chunk)
                 tail = (tail + chunk)[-nbytes:]
-                seen += len(chunk)
-                if seen > max_scan:
+                lines = (rest + chunk).split(b"\n")
+                rest = lines.pop()  # last piece may be an unfinished line
+                if len(hits) < max_hits:
+                    for raw in lines:
+                        line = raw.decode("utf-8", "replace").strip()[:400]
+                        if line and line not in seen_hits and ERROR_LINE.search(line) \
+                                and "MaskedException" not in line and not line.startswith("at "):
+                            seen_hits.add(line)
+                            hits.append(line)
+                            if len(hits) >= max_hits:
+                                break
+                if scanned > max_scan:
                     break
-        return tail.decode("utf-8", "replace")
+        return ("\n".join(hits) + "\n----- end of log -----\n"
+                + tail.decode("utf-8", "replace"))
 
     def failed_tests(self, build_url: str, cap: int = 500) -> list[str] | None:
         r = self._get(_path_of(build_url) + "testReport/api/json",

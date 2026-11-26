@@ -108,3 +108,21 @@ def test_rebuild_of_same_job_is_a_run_not_a_child():
            "builds": [dict(b), dict(b, number=979, upstream={"job": "ps-package-testing-molecule", "number": 978})]}]}
     f = stats.compute(rec, cfg)
     assert f["builds"]["total"] == 2 and f["builds"]["cells"] == 0
+
+
+def test_error_far_before_the_end_of_a_big_log_is_found(monkeypatch):
+    """ps-package-testing-molecule #978: the real error is megabytes before the end."""
+    from qa_digest.classify import classify
+    early = ("fatal: [localhost]: FAILED! => {\"msg\": \"The 'file' lookup had an issue accessing the file "
+             "'/home/ec2-user/.ansible/tmp/molecule.ZSfJ.oracle-8/instance_config.yml'. file not found\"}\n")
+    log = "start\n" + early + ("ok: [host] => noise line\n" * 40000) + "[Pipeline] End of Pipeline\nFinished: FAILURE\n"
+
+    class S(FakeSession):
+        def get(self, url, params=None, timeout=None, stream=False):
+            return Resp(text=log)
+
+    monkeypatch.setattr(jenkins.requests, "Session", S)
+    jk = jenkins.Jenkins("https://ps80.cd.percona.com", "u", "t")
+    text = jk.log_tail("https://ps80.cd.percona.com/job/ps-package-testing-molecule/978/")
+    assert len(log) > 900_000 and "instance_config.yml" in text and text.endswith("Finished: FAILURE\n")
+    assert classify({"result": "FAILURE", "log_tail": text, "causes": []}) == "infra"

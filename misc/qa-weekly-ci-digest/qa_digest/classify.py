@@ -33,6 +33,8 @@ INFRA_PATTERNS = [
     # molecule could not create its cloud instances (setup, not the product under test)
     r"instance_config\.yml'?\. file not found",
     r"Unable to perform: pro enable",
+    r"AgentOfflineException",
+    r"was marked offline",
 ]
 TEST_PATTERNS = [
     r"AssertionError",
