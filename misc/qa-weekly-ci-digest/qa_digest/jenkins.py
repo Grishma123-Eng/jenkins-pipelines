@@ -113,8 +113,11 @@ def normalize_build(job: str, b: dict) -> dict:
             continue
         for c in a.get("causes") or []:
             causes.append(c.get("shortDescription", ""))
-            if c.get("upstreamProject") and upstream is None:
-                upstream = {"job": c["upstreamProject"], "number": c.get("upstreamBuild")}
+            up_job = c.get("upstreamProject")
+            # a Rebuild/Replay of the same job is reported as an "upstream" cause too:
+            # that is a normal run of this job, not a child build
+            if up_job and up_job != job and upstream is None:
+                upstream = {"job": up_job, "number": c.get("upstreamBuild")}
         for p in a.get("parameters") or []:
             if isinstance(p.get("value"), (str, int, float, bool)):
                 params[p["name"]] = p["value"]

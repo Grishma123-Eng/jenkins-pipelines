@@ -37,12 +37,13 @@ class Resp:
         return False
 
 
-def build(n, result, days_ago, **extra):
-    d = {"number": n, "result": result, "timestamp": NOW - days_ago * DAY, "duration": 600_000,
-         "url": f"https://pxc.cd.percona.com/job/test-pxc-docker-5.7-EOL/{n}/", "building": False,
-         "actions": [{"causes": [{"shortDescription": "Started by user grishma"}]}]}
-    d.update(extra)
-    return d
+def build(n, result, days_ago, job="pxc-docker-tests", upstream=None):
+    cause = ({"shortDescription": f"Started by upstream project {upstream[0]}",
+              "upstreamProject": upstream[0], "upstreamBuild": upstream[1]}
+             if upstream else {"shortDescription": "Started by user grishma"})
+    return {"number": n, "result": result, "timestamp": NOW - days_ago * DAY, "duration": 600_000,
+            "url": f"https://pxc.cd.percona.com/job/{job}/{n}/", "building": False,
+            "actions": [{"causes": [cause]}]}
 
 
 class FakeSession:
@@ -50,21 +51,26 @@ class FakeSession:
 
     def get(self, url, params=None, timeout=None, stream=False):
         if url.endswith("/api/json") and "allBuilds" in (params or {}).get("tree", ""):
-            if "test-pxc-docker-5.7-EOL" in url:
+            if "/job/pxc-docker-tests/" in url:
                 return Resp(json_data={"allBuilds": [build(107, "FAILURE", 1), build(104, "SUCCESS", 3),
                                                      build(90, "FAILURE", 80)]})
+            if "/job/pxc-package-testing-parallel/" in url:
+                return Resp(json_data={"allBuilds": [build(301, "UNSTABLE", 2, job="pxc-package-testing-parallel")]})
+            if "/job/pxc-package-testing/" in url:
+                return Resp(json_data={"allBuilds": [
+                    build(5157, "UNSTABLE", 2, job="pxc-package-testing",
+                          upstream=("pxc-package-testing-parallel", 301)),
+                    build(5101, "SUCCESS", 2, job="pxc-package-testing",
+                          upstream=("pxc-package-testing-parallel-test", 44))]})
             return Resp(json_data={"allBuilds": []})
-        if url.endswith("/api/json"):
-            return Resp(json_data={"jobs": [
-                {"_class": "x.WorkflowJob", "fullName": "test-pxc-docker-5.7-EOL", "url": "u", "color": "red"},
-                {"_class": "x.WorkflowJob", "fullName": "pxc-docker-tests-grishma", "url": "u", "color": "blue"},
-                {"_class": "com.cloudbees.hudson.plugins.folder.Folder", "fullName": "f", "jobs": [
-                    {"_class": "x.WorkflowJob", "fullName": "f/hetzner-pxc8.0-docker-build", "url": "u"}]},
-            ]})
         if url.endswith("testReport/api/json"):
             return Resp(status=404)
         if url.endswith("consoleText"):
-            return Resp(text="52 passed\nFailed in branch Run Trivy Analyzer\nFinished: FAILURE\n")
+            if "/job/pxc-package-testing/" in url:
+                return Resp(text='fatal: [x]: FAILED! => {"stdout": "Telemetry Agent version is incorrect"}\n')
+            if "/job/pxc-docker-tests/" in url:
+                return Resp(text="52 passed\nFailed in branch Run Trivy Analyzer\nFinished: FAILURE\n")
+            return Resp(text="pxc-package-testing #5157 completed with status UNSTABLE\nFinished: UNSTABLE\n")
         return Resp(status=404)
 
 
@@ -74,10 +80,31 @@ def test_collect_and_compute(monkeypatch):
     cfg["masters"] = {"pxc": "https://pxc.cd.percona.com"}
     rec = jenkins.collect(cfg, "u", "t", now_ms=NOW)
     m = rec["masters"][0]
-    assert [j["name"] for j in m["jobs"]] == ["test-pxc-docker-5.7-EOL"]   # personal copy + build job excluded
-    assert [b["number"] for b in m["builds"]] == [107, 104]                  # #90 is older than 8 weeks
-    assert "Trivy" in m["builds"][0]["log_tail"]
+    assert {j["name"] for j in m["jobs"]} == {"pxc-package-testing-parallel", "test-pxc-binary-tarball",
+                                             "test-pxc-binary-tarball-EOL", "pxc-docker-tests"}
+    by_job = {}
+    for b in m["builds"]:
+        by_job.setdefault(b["job"], []).append(b["number"])
+    assert by_job["pxc-docker-tests"] == [107, 104]          # #90 is older than 8 weeks
+    assert by_job["pxc-package-testing"] == [5157]           # child of parallel-test #44 is ignored
     f = stats.compute(rec, cfg)
-    assert f["builds"]["total"] == 2 and f["builds"]["failed"] == 1
-    assert f["causes"]["scan"] == 1
-    assert f["by_product"]["PXC"]["runs"] == 2 and f["by_type"]["docker"]["failed"] == 1
+    assert f["scope"]["jobs_in_scope"] == 4
+    assert f["builds"]["total"] == 3                         # children are not counted as runs
+    assert f["builds"]["cells"] == 1 and f["builds"]["cells_red"] == 1
+    assert f["causes"]["scan"] == 1 and f["causes"]["test"] == 1   # parallel #301 classed from its child
+    assert f["by_type"]["docker"]["failed"] == 1 and f["by_type"]["package"]["unstable"] == 1
+
+
+def test_rebuild_of_same_job_is_a_run_not_a_child():
+    """ps80 ps-package-testing-molecule #980 'Rebuilds build #979' (Rebuild plugin = upstream cause)."""
+    b = jenkins.normalize_build("ps-package-testing-molecule", {
+        "number": 980, "result": "SUCCESS", "timestamp": NOW, "duration": 1, "url": "u", "building": False,
+        "actions": [{"causes": [{"shortDescription": "Rebuilds build #979",
+                                 "upstreamProject": "ps-package-testing-molecule", "upstreamBuild": 979}]}]})
+    assert b["upstream"] is None
+    cfg = yaml.safe_load(open(Path(__file__).resolve().parents[1] / "config.yaml"))
+    rec = {"collected_at_ms": NOW + 1, "masters": [{"name": "ps80", "url": "u",
+           "jobs": [{"name": "ps-package-testing-molecule", "product": "PS", "type": "package"}],
+           "builds": [dict(b), dict(b, number=979, upstream={"job": "ps-package-testing-molecule", "number": 978})]}]}
+    f = stats.compute(rec, cfg)
+    assert f["builds"]["total"] == 2 and f["builds"]["cells"] == 0

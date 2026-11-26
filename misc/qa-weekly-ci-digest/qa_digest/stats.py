@@ -39,7 +39,8 @@ def compute(records: dict, cfg: dict) -> dict:
     # parallel children like pxc-package-testing under pxc-package-testing-parallel).
     for b in builds:
         up = b.get("upstream") or {}
-        b["is_cell"] = bool(up) and key(b["master"], up.get("job", "")) in meta
+        b["is_cell"] = (bool(up) and up.get("job") != b["job"]   # a rebuild of itself is a normal run
+                        and key(b["master"], up.get("job", "")) in meta)
         if b["result"] in RED + ("ABORTED",):
             b["cls"] = classify(b)
 
