@@ -71,3 +71,13 @@ def test_lost_agent_abort_is_infra_user_abort_is_not():
 def test_best_quote_skips_exit_code_lines():
     lines = evidence_lines("E       AssertionError: assert '0o555' == '0o755'\nERROR: script returned exit code 1")
     assert best_quote(lines).startswith("E       AssertionError")
+
+
+def test_attention_job_is_a_slack_link():
+    from qa_digest.render import _slack_job
+    it = {"job": "ps80/test-ps-docker-image", "build": 253,
+          "job_url": "https://ps80.cd.percona.com/job/test-ps-docker-image/",
+          "build_url": "https://ps80.cd.percona.com/job/test-ps-docker-image/253/"}
+    assert _slack_job(it) == ("<https://ps80.cd.percona.com/job/test-ps-docker-image/|ps80/test-ps-docker-image>"
+                              " (<https://ps80.cd.percona.com/job/test-ps-docker-image/253/|#253>)")
+    assert _slack_job({"job": "x/y"}) == "`x/y`"   # no URL known: plain name, no broken link

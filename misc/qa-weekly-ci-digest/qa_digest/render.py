@@ -13,6 +13,17 @@ def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
+def _slack_job(it: dict) -> str:
+    """Job name linked to its Jenkins page, plus a link to the build the item is about.
+
+    Slack link syntax is <url|text>. Links do not work inside `code`, so the name is plain.
+    """
+    job = f"<{it['job_url']}|{it['job']}>" if it.get("job_url") else f"`{it['job']}`"
+    if it.get("build") and it.get("build_url"):
+        job += f" (<{it['build_url']}|#{it['build']}>)"
+    return job
+
+
 def sections(facts: dict, att: dict, cfg: dict) -> list[tuple[str, str]]:
     b, cz = facts["builds"], facts["causes"]
     out = []
@@ -65,7 +76,7 @@ def slack_blocks(facts: dict, att: dict, cfg: dict, report_url: str | None = Non
     n_show = cfg["attention"]["max_items_in_slack"]
     items = att["items"]
     if items:
-        lines = [f"• `{it['job']}`: {it['text']}" for it in items[:n_show]]
+        lines = [f"• {_slack_job(it)}: {it['text']}" for it in items[:n_show]]
         if len(items) > n_show:
             lines.append(f"_And {len(items) - n_show} more in the report._")
         blocks.append({"type": "section", "text": {"type": "mrkdwn",
@@ -103,7 +114,10 @@ def markdown_report(facts: dict, att: dict, cfg: dict) -> str:
         md.append(f"- **{k}:** " + v.replace("\n", "; "))
     md += ["", "## Needs attention", ""]
     for i, it in enumerate(att["items"], 1):
-        md.append(f"{i}. `{it['job']}` #{it.get('build')}: {it['text']}")
+        job = f"[`{it['job']}`]({it['job_url']})" if it.get("job_url") else f"`{it['job']}`"
+        build = (f"[#{it['build']}]({it['build_url']})" if it.get("build_url")
+                 else f"#{it.get('build')}")
+        md.append(f"{i}. {job} {build}: {it['text']}")
         if it.get("quote"):
             md.append(f"   > `{it['quote']}`")
     if att.get("dropped"):

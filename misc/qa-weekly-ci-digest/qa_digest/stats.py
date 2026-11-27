@@ -26,7 +26,8 @@ def compute(records: dict, cfg: dict) -> dict:
     for m in records["masters"]:
         for j in m["jobs"]:
             meta[key(m["name"], j["name"])] = {"product": j.get("product", "?"),
-                                               "type": j.get("type", "?")}
+                                               "type": j.get("type", "?"),
+                                               "url": j.get("url")}
         for b in m["builds"]:
             up = (b.get("upstream") or {}).get("job", "")
             if up and any(re.search(p, up) for p in cfg.get("exclude_upstream", [])):

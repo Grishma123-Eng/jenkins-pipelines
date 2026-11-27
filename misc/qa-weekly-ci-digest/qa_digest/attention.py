@@ -51,7 +51,8 @@ def candidates(facts: dict, limit: int = 15) -> list[dict]:
                 ev = facts["evidence"].get(f"{c['key']}#{c['number']}", [])
                 if ev:
                     break
-        out.append({"score": round(score, 2), "facts": j, "build": b and b["number"], "evidence": ev})
+        out.append({"score": round(score, 2), "facts": j, "build": b and b["number"],
+                    "job_url": j.get("url"), "build_url": b and b.get("url"), "evidence": ev})
     out.sort(key=lambda c: -c["score"])
     return out[:limit]
 
@@ -102,8 +103,14 @@ def verify(items: list[dict], cands: list[dict]) -> tuple[list[dict], list[dict]
                 bad = [n for n in _num.findall(it.get("text", "")) if n not in allowed]
                 if bad:
                     reason = f"numbers not in facts: {bad}"
+        build = it.get("build") or (c and c["build"])
+        links = {}
+        if c:  # links come from Jenkins data, never from the model
+            links = {"job_url": c.get("job_url"),
+                     "build_url": c.get("build_url") if build == c["build"] else
+                     (c.get("job_url") and f"{c['job_url']}{build}/")}
         (dropped if reason else ok).append(dict(it, **({"dropped": reason} if reason else {}),
-                                               build=it.get("build") or (c and c["build"])))
+                                               build=build, **links))
     return ok, dropped
 
 
@@ -129,7 +136,8 @@ def rule_based(cands: list[dict]) -> list[dict]:
         if j["flaky"]:
             parts.append(f"flaky (result flips {int(j['flip_rate'] * 100)}% of the time)")
         quote = best_quote(c["evidence"])
-        items.append({"job": j["job"], "build": c["build"], "text": ". ".join(parts) + ".", "quote": quote})
+        items.append({"job": j["job"], "build": c["build"], "text": ". ".join(parts) + ".", "quote": quote,
+                      "job_url": c.get("job_url"), "build_url": c.get("build_url")})
     return items
 
 
